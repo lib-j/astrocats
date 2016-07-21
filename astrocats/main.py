@@ -2,6 +2,7 @@
 """
 import importlib
 import json
+import logging
 import os
 
 from astrocats import _CONFIG_PATH, __version__
@@ -36,6 +37,9 @@ def main():
     if args.command == 'setup':
         setup_user_config(log)
         return
+
+    # Log the current configuration
+    _log_args(args, log)
 
     git_vers = get_git()
     title_str = "Astrocats, version: {}, SHA: {}".format(__version__, git_vers)
@@ -255,6 +259,31 @@ def get_git():
     import subprocess
     git_vers = subprocess.getoutput(["git describe --always"]).strip()
     return git_vers
+
+
+def _log_args(args, log):
+    """Print current configuration information to log.
+    """
+    log.info("AstroCats\nCurrent Configuration:")
+    arg_list = [
+        # Variable name,  print name,  logging-level-true  false
+        ['verbose', '', logging.INFO, logging.INFO],
+        ['debug', '', logging.INFO, logging.INFO],
+        ['travis', '', logging.WARNING, logging.INFO],
+        ['clone_depth', '', logging.INFO, logging.INFO],
+        ['json_tasks', 'include-tasks-in-json', logging.WARNING, logging.INFO],
+        ['write_entries', '', logging.INFO, logging.WARNING],
+        ['delete_old', 'predelete', logging.INFO, logging.WARNING],
+    ]
+
+    for vname, pr_str, lvl_true, lvl_false in arg_list:
+        val = getattr(args, vname)
+        if not len(pr_str):
+            pr_str = vname
+        use_lvl = lvl_true if val else lvl_false
+        log.log(use_lvl, "{}: '{}'".format(pr_str, val))
+
+    return
 
 if __name__ == "__main__":
     main()
