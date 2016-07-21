@@ -3,15 +3,11 @@
 from astrocats.catalog.utils import is_number
 
 
-class KeyCollection:
-    """General container class with methods to list attribute names and values.
-
-    Used mostly by different `CatDict` subclasses to contain the 'keys' to
-    their internal dictionaries.
+class CollectionDict:
+    """General container with methods to list attributes' names and values.
     """
     _keys = []
     _vals = []
-    _compare_vals = []
 
     @classmethod
     def keys(cls):
@@ -37,7 +33,7 @@ class KeyCollection:
         # get the keys from all base-classes aswell (when this is subclasses)
         for mro in cls.__bases__:
             # base classes below `KeyCollection` (e.g. `object`) wont work
-            if issubclass(mro, KeyCollection):
+            if issubclass(mro, CollectionDict):
                 _keys.extend(mro.keys())
 
         # Get the keys from this particular subclass
@@ -57,7 +53,7 @@ class KeyCollection:
         Returns
         -------
         _vals : list of objects
-            List of values of internal attributes.  Order is effectiely random.
+            List of values of internal attributes. Order is effectiely random.
         """
         if cls._vals:
             return cls._vals
@@ -68,7 +64,7 @@ class KeyCollection:
         # get the keys from all base-classes aswell (when this is subclasses)
         for mro in cls.__bases__:
             # base classes below `KeyCollection` (e.g. `object`) wont work
-            if issubclass(mro, KeyCollection):
+            if issubclass(mro, CollectionDict):
                 _vals.extend(mro.vals())
 
         # Get the keys from this particular subclass
@@ -82,47 +78,6 @@ class KeyCollection:
         return cls._vals
 
     @classmethod
-    def compare_vals(cls, sort=True):
-        """Return this class's attribute values (those not stating with '_'),
-        but only for attributes with `compare` set to `True`.
-
-        Returns
-        -------
-        _compare_vals : list of objects
-            List of values of internal attributes to use when comparing
-            `CatDict` objects. Order sorted by `Key` priority, followed by
-            alphabetical.
-        """
-        if cls._compare_vals:
-            return cls._compare_vals
-
-        # If `_compare_vals` is not yet defined, create it
-        # ----------------------------------------
-        _compare_vals = []
-        # get the keys from all base-classes aswell (when this is subclasses)
-        for mro in cls.__bases__:
-            # base classes below `KeyCollection` (e.g. `object`) wont work
-            if issubclass(mro, KeyCollection):
-                _compare_vals.extend(mro.compare_vals(sort=False))
-
-        # Get the keys from this particular subclass
-        # Only non-hidden (no '_') and variables (non-callable)
-        _compare_vals.extend([
-            vv for kk, vv in vars(cls).items()
-            if (not kk.startswith('_') and not callable(getattr(cls, kk)) and
-                vv.compare)
-        ])
-
-        # Sort keys based on priority, high priority values first
-        if sort:
-            _compare_vals = sorted(_compare_vals, reverse=True,
-                                   key=lambda key: (key.priority, key.name))
-
-        # Store for future retrieval
-        cls._compare_vals = _compare_vals
-        return cls._compare_vals
-
-    @classmethod
     def get_key_by_name(cls, name):
         for val in cls.vals():
             if name == val.name:
@@ -130,7 +85,7 @@ class KeyCollection:
         return Key(name)
 
 
-class KEY_TYPES(KeyCollection):
+class KEY_TYPES(CollectionDict):
     NUMERIC = 'numeric'
     STRING = 'string'
     BOOL = 'bool'
@@ -231,3 +186,57 @@ class Key(str):
                 return False
 
         return True
+
+
+class KeyCollection(CollectionDict):
+    """General container class with methods to list attribute names and values.
+
+    Used mostly by different `CatDict` subclasses to contain the 'keys' to
+    their internal dictionaries.
+    """
+    _keys = []
+    _vals = []
+    _compare_vals = []
+
+    TASKS = Key('name', KEY_TYPES.STRING)
+
+    @classmethod
+    def compare_vals(cls, sort=True):
+        """Return this class's attribute values (those not stating with '_'),
+        but only for attributes with `compare` set to `True`.
+
+        Returns
+        -------
+        _compare_vals : list of objects
+            List of values of internal attributes to use when comparing
+            `CatDict` objects. Order sorted by `Key` priority, followed by
+            alphabetical.
+        """
+        if cls._compare_vals:
+            return cls._compare_vals
+
+        # If `_compare_vals` is not yet defined, create it
+        # ----------------------------------------
+        _compare_vals = []
+        # get the keys from all base-classes aswell (when this is subclasses)
+        for mro in cls.__bases__:
+            # base classes below `KeyCollection` (e.g. `object`) wont work
+            if issubclass(mro, KeyCollection):
+                _compare_vals.extend(mro.compare_vals(sort=False))
+
+        # Get the keys from this particular subclass
+        # Only non-hidden (no '_') and variables (non-callable)
+        _compare_vals.extend([
+            vv for kk, vv in vars(cls).items()
+            if (not kk.startswith('_') and not callable(getattr(cls, kk)) and
+                vv.compare)
+        ])
+
+        # Sort keys based on priority, high priority values first
+        if sort:
+            _compare_vals = sorted(_compare_vals, reverse=True,
+                                   key=lambda key: (key.priority, key.name))
+
+        # Store for future retrieval
+        cls._compare_vals = _compare_vals
+        return cls._compare_vals

@@ -31,6 +31,9 @@ The ['change-log' (below)](#changelog) in this file should summarize **all API c
     - Basic 'count' functionality to report the number of files and tasks in each catalog.
 - Added subcommands for git repositories in [astrocats/catalog/catalog.py](https://github.com/astrocatalogs/astrocats/blob/master/astrocats/catalog/catalog.py).
     - The 'push' subcommand can now be used to add, commit and push all data files in each data repository.  This works in all installed catalogs.
+- Separated the [`KeyCollection`](https://github.com/astrocatalogs/astrocats/blob/master/astrocats/catalog/key.py) class into separate `CollectionDict` and `KeyCollection` classes.
+    - The `CollectionDict` class provides the `keys` and `vals` getter methods for a general dictionary-like collection.  Both the `KeyCollection` and the `KEY_TYPES` classes subclass the new `CollectionDict`.
+    - `KeyCollection` contains the additional machinery for keys-specifically, e.g. `compare_vals` and any specific `Keys` that are included by default e.g. `TASKS`.
 - `astrocats/catalog/entry.py`
     - `Entry.add_alias` [new-function]
         - New method to add aliases to an existing entry after first 'cleaning' the alias name - in the same way as the entry names are cleaned by the containing catalog.  In this way, the stored aliases should be guaranteed (in general) to match the corresponding entry names (and naming styles).
