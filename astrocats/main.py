@@ -172,12 +172,16 @@ def load_command_line_args(clargs=None):
         '--debug', '-d', dest='debug', default=False, action='store_true',
         help='Print excessive messages to the screen.')
     parser.add_argument(
-        '--travis', '-t',  dest='travis',  default=False, action='store_true',
+        '--travis', '-t',  dest='travis', default=False, action='store_true',
         help='Run import script in test mode for Travis.')
     parser.add_argument(
-        '--clone-depth', dest='clone_depth',  default=0, type=int,
+        '--clone-depth', dest='clone_depth', default=0, type=int,
         help=('When cloning git repos, only clone out to this depth '
               '(default: 0 = all levels).'))
+    parser.add_argument(
+        '--include-tasks-in-json', dest='json_tasks', default=False, type=int,
+        help=('Include the names of each task contributin to all `CatDict` '
+              'when writing json files.'))
     parser.add_argument(
         '--log',  dest='log_filename',  default=None,
         help='Filename to which to store logging information.')
