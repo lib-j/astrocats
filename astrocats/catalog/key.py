@@ -198,7 +198,7 @@ class KeyCollection(CollectionDict):
     _vals = []
     _compare_vals = []
 
-    TASKS = Key('name', KEY_TYPES.STRING)
+    TASKS = Key('tasks', KEY_TYPES.STRING, listable=True, compare=False)
 
     @classmethod
     def compare_vals(cls, sort=True):
