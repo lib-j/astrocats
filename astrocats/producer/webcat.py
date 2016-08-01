@@ -42,11 +42,11 @@ from astrocats.supernovae.scripts.events import (get_event_filename,
 from astrocats.supernovae.scripts.repos import get_rep_folder, repo_file_list
 from cdecimal import Decimal
 
-from .utils import event_filename, touch, utf8, label_format, is_valid_link, get_first_kind,
+from .utils import touch, label_format, get_first_kind, \
     get_first_value, md5file
 
-from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS,
-    COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES,
+from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS, \
+    COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES, \
     SITEMAP_TEMPLATE
 
 parser = argparse.ArgumentParser(
