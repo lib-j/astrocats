@@ -12,6 +12,8 @@ __license__ = 'MIT'
 _CONFIG_PATH = os.path.join(os.path.expanduser('~'),
                             '.config', 'astrocats', 'astrocatsrc')
 
+_ROOT_BASE_PATH = os.path.abspath('.')
+
 # Make sure configuration file exists, or that's what we're doing
 # (with the 'setup' subcommand)
 if not os.path.isfile(_CONFIG_PATH) and 'setup' not in sys.argv:
