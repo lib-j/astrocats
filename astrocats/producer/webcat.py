@@ -3,13 +3,11 @@ import argparse
 import csv
 import filecmp
 import gzip
-import hashlib
 import json
 import operator
 import os
 import re
 import shutil
-import sys
 import urllib.parse
 import urllib.request
 import warnings
@@ -21,7 +19,6 @@ from statistics import mean
 
 import inflect
 import numpy
-import requests
 from astropy import units as un
 from astropy.coordinates import SkyCoord as coord
 from astropy.time import Time as astrotime
@@ -34,17 +31,23 @@ from bokeh.models.widgets import Select
 from bokeh.plotting import Figure, reset_output
 from bokeh.resources import CDN
 from bs4 import BeautifulSoup
-from palettable import cubehelix
 
-from astrocats.catalog.utils import (bandaliasf, bandcodes, bandcolorf,
+from astrocats.catalog.utils import (bandaliasf, bandcolorf,
                                      bandgroupf, bandshortaliasf, bandwavef,
-                                     bandwavelengths, get_sig_digits,
+                                     get_sig_digits,
                                      is_number, pretty_num, radiocolorf,
                                      round_sig, tprint, tq, xraycolorf)
 from astrocats.supernovae.scripts.events import (get_event_filename,
                                                  get_event_text)
 from astrocats.supernovae.scripts.repos import get_rep_folder, repo_file_list
 from cdecimal import Decimal
+
+from .utils import event_filename, touch, utf8, label_format, is_valid_link, get_first_kind,
+    get_first_value, md5file
+
+from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS,
+    COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES,
+    SITEMAP_TEMPLATE
 
 parser = argparse.ArgumentParser(
     description='Generate a catalog JSON file and plot HTML files from SNE data.')
@@ -122,159 +125,14 @@ cachedir = "cache/"
 jsondir = "json/"
 htmldir = "html/"
 
-travislimit = 100
-
-radiosigma = 3.0
-
-googlepingurl = "http://www.google.com/webmasters/tools/ping?sitemap=https%3A%2F%2Fsne.space%2Fsitemap.xml"
-
-linkdir = "https://sne.space/sne/"
 
 testsuffix = '.test' if args.test else ''
 
-mycolors = cubehelix.perceptual_rainbow_16.hex_colors[:14]
-
-columnkey = [
-    "check", "name", "alias", "discoverdate", "maxdate", "maxappmag",
-    "maxabsmag", "host", "ra", "dec", "hostra", "hostdec", "hostoffsetang",
-    "hostoffsetdist", "instruments", "redshift", "velocity", "lumdist",
-    "claimedtype", "ebv", "photolink", "spectralink", "radiolink", "xraylink",
-    "references", "download", "responsive"
-]
-
-eventignorekey = ["download"]
-
-header = [
-    "", "Name", "Aliases", "Disc. Date", "Max Date",
-    r"<em>m</em><sub>max</sub>", r"<em>M</em><sub>max</sub>", "Host Name",
-    "R.A.", "Dec.", "Host R.A.", "Host Dec.", "Host Offset (\")",
-    "Host Offset (kpc)", "Instruments/Bands", r"<em>z</em>",
-    r"<em>v</em><sub>&#9737;</sub> (km/s)", r"<em>d</em><sub>L</sub> (Mpc)",
-    "Type", "E(B-V)", "Phot.", "Spec.", "Radio", "X-ray", "References", "Data",
-    ""
-]
-
-eventpageheader = [
-    "", "Name", "Aliases", "Discovery Date", "Maximum Date [band]",
-    r"<em>m</em><sub>max</sub> [band]", r"<em>M</em><sub>max</sub> [band]",
-    "Host Name", "R.A.", "Dec.", "Host R.A.", "Host Dec.", "Host Offset (\")",
-    "Host Offset (kpc)", "Instruments/Bands", r"<em>z</em>",
-    r"<em>v</em><sub>&#9737;</sub> (km/s)", r"<em>d</em><sub>L</sub> (Mpc)",
-    "Claimed Type", "E(B-V)", "Photometry", "Spectra", "Radio", "X-ray",
-    "References", "Download", ""
-]
-
-titles = [
-    "", "Name (IAU name preferred)", "Aliases",
-    "Discovey Date (year-month-day)", "Date of Maximum (year-month-day)",
-    "Maximum apparent AB magnitude", "Maximum absolute AB magnitude",
-    "Host Name", "Supernova J2000 Right Ascension (h:m:s)",
-    "Supernova J2000 Declination (d:m:s)",
-    "Host J2000 Right Ascension (h:m:s)", "Host J2000 Declination (d:m:s)",
-    "Host Offset (Arcseconds)", "Host Offset (kpc)",
-    "List of Instruments and Bands", "Redshift",
-    "Heliocentric velocity (km/s)", "Luminosity distance (Mpc)",
-    "Claimed Type", "Milky Way Reddening", "Photometry", "pectra", "Radio",
-    "X-rays", "Bibcodes of references with most data on event",
-    "Download and edit data", ""
-]
-
-photokeys = [
-    'u_time', 'time', 'band', 'instrument', 'magnitude', 'aberr', 'upperlimit',
-    'source'
-]
-
-sourcekeys = ['name', 'alias', 'secondary']
-
-newfiletemplate = ('''{
-\t"{0}":{
-\t\t"name":"{0}",
-\t\t"alias":[
-\t\t\t"{0}"
-\t\t]
-\t}
-}''')
-
-with open('astrocats/supernovae/html/sitemap-template.xml', 'r') as f:
-    sitemaptemplate = f.read()
-
-if len(columnkey) != len(header):
-    raise (ValueError('Header not same length as key list.'))
-    sys.exit(0)
-
-if len(columnkey) != len(eventpageheader):
-    raise (ValueError('Event page header not same length as key list.'))
-    sys.exit(0)
-
-header = OrderedDict(list(zip(columnkey, header)))
-eventpageheader = OrderedDict(list(zip(columnkey, eventpageheader)))
-titles = OrderedDict(list(zip(columnkey, titles)))
-
-wavedict = dict(list(zip(bandcodes, bandwavelengths)))
-
-
-def event_filename(name):
-    return (name.replace('/', '_'))
-
-# Replace bands with real colors, if possible.
-# for b, code in enumerate(bandcodes):
-#    if (code in bandwavelengths):
-#        hexstr = irgb_string_from_xyz(xyz_from_wavelength(bandwavelengths[code]))
-#        if (hexstr != "#000000"):
-#            bandcolors[b] = hexstr
-
-coldict = dict(list(zip(list(range(len(columnkey))), columnkey)))
-
-
-def touch(fname, times=None):
-    with open(fname, 'a'):
-        os.utime(fname, times)
-
-
-def utf8(x):
-    return str(x, 'utf-8')
-
-
-def label_format(label):
-    newlabel = label.replace('Angstrom', 'Å')
-    newlabel = newlabel.replace('^2', '²')
-    return newlabel
-
-
-def is_valid_link(url):
-    response = requests.get(url)
-    try:
-        response.raise_for_status()
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except:
-        return False
-    return True
-
-
-def get_first_value(name, field):
-    return catalog[name][field][0]['value'] if field in catalog[
-        name] and catalog[name][field] else ''
-
-
-def get_first_kind(name, field):
-    return (catalog[name][field][0]['kind'] if field in catalog[name] and
-            catalog[name][field] and 'kind' in catalog[name][field][0] else '')
-
-
-def md5file(fname):
-    hash_md5 = hashlib.md5()
-    with open(fname, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
 
 
 catalog = OrderedDict()
 catalogcopy = OrderedDict()
-snepages = [["# name", "aliases", "max apparent mag", "max mag date",
-             "claimed type", "redshift", "redshift kind", "ra", "dec",
-             "# of photometric obs.", "URL"]]
+
 sourcedict = {}
 nophoto = []
 lcspye = []
@@ -308,7 +166,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
     if args.eventlist and fileeventname not in args.eventlist:
         continue
 
-    if args.travis and fcnt >= travislimit:
+    if args.travis and fcnt >= TRAVIS_LIMIT:
         break
 
     entry_changed = False
@@ -378,7 +236,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
     numradio = len([x for x in catalog[entry]['photometry']
                     if 'upperlimit' not in x and 'fluxdensity' in x and
                     (not x['e_fluxdensity'] or float(x['fluxdensity']) >
-                     radiosigma * float(x['e_fluxdensity'])
+                     RADIO_SIGMA * float(x['e_fluxdensity'])
                      ) and (not hostmag or 'includeshost' not in x or float(x[
                          'magnitude']) <= (hostmag - 2.0 * hosterr))
                     ]) if photoavail else 0
@@ -440,8 +298,8 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
 
     distancemod = 0.0
     if 'maxabsmag' in catalog[entry] and 'maxappmag' in catalog[entry]:
-        distancemod = float(get_first_value(entry, 'maxappmag')) - \
-            float(get_first_value(entry, 'maxabsmag'))
+        distancemod = float(get_first_value(catalog, entry, 'maxappmag')) - \
+            float(get_first_value(catalog, entry, 'maxabsmag'))
 
     plotlink = "sne/" + fileeventname + "/"
     if photoavail:
@@ -1055,7 +913,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
                 'x',
                 'y',
                 source=sources[i],
-                color=mycolors[i % len(mycolors)],
+                color=DEF_COLORS[i % len(DEF_COLORS)],
                 line_width=2,
                 line_join='round')
 
@@ -1162,9 +1020,9 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         photofd = [
             float(x['fluxdensity']) if 'e_fluxdensity' not in x else
             (float(x['fluxdensity']) if
-             (float(x['fluxdensity']) > radiosigma * float(x['e_fluxdensity']))
+             (float(x['fluxdensity']) > RADIO_SIGMA * float(x['e_fluxdensity']))
              else round_sig(
-                 radiosigma * float(x['e_fluxdensity']),
+                 RADIO_SIGMA * float(x['e_fluxdensity']),
                  sig=get_sig_digits(x['e_fluxdensity'])))
             for x in catalog[entry]['photometry'] if 'fluxdensity' in x
         ]
@@ -1193,7 +1051,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
                        if 'fluxdensity' in y]
         phototype = [
             (True if 'upperlimit' in x or
-             radiosigma * float(x['e_fluxdensity']) >= float(x['fluxdensity'])
+             RADIO_SIGMA * float(x['e_fluxdensity']) >= float(x['fluxdensity'])
              else False) for x in catalog[entry]['photometry']
             if 'fluxdensity' in x
         ]
@@ -1480,9 +1338,9 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         ]
         photofl = [float(x['flux'])
                    if ('e_flux' not in x or
-                       float(x['flux']) > radiosigma * float(x['e_flux'])) else
+                       float(x['flux']) > RADIO_SIGMA * float(x['e_flux'])) else
                    round_sig(
-                       radiosigma * float(x['e_flux']),
+                       RADIO_SIGMA * float(x['e_flux']),
                        sig=get_sig_digits(x['e_flux']))
                    for x in catalog[entry]['photometry'] if 'flux' in x]
         photoflerrs = [(float(x['e_flux']) if 'e_flux' in x else 0.)
@@ -1506,7 +1364,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
                        if 'flux' in y]
         phototype = [
             (True if 'upperlimit' in x or
-             radiosigma * float(x['e_flux']) >= float(x['flux']) else False)
+             RADIO_SIGMA * float(x['e_flux']) >= float(x['flux']) else False)
             for x in catalog[entry]['photometry'] if 'flux' in x
         ]
 
@@ -1528,9 +1386,9 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
             yaxis = 'Counts'
             photofl = [float(x['counts'])
                        if ('e_counts' not in x or
-                           float(x['counts']) > radiosigma * float(x['e_counts'])) else
+                           float(x['counts']) > RADIO_SIGMA * float(x['e_counts'])) else
                        round_sig(
-                           radiosigma * float(x['e_counts']),
+                           RADIO_SIGMA * float(x['e_counts']),
                            sig=get_sig_digits(x['e_counts']))
                        for x in catalog[entry]['photometry'] if 'counts' in x]
             photoflerrs = [(float(x['e_counts']) if 'e_counts' in x else 0.)
@@ -1971,7 +1829,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         repfolder = get_rep_folder(catalog[entry])
         html = re.sub(
             r'(\<\/body\>)', '<div class="event-download">' + r'<a href="' +
-            linkdir + fileeventname + r'.json" download>' +
+            SNE_LINK_DIR + fileeventname + r'.json" download>' +
             r'Download all data for ' + eventname + r'</a></div>\n\1', html)
         issueargs = '?title=' + ('[' + eventname + '] <Descriptive issue title>').encode('ascii', 'xmlcharrefreplace').decode("utf-8") + '&body=' + \
             ('Please describe the issue with ' + eventname + '\'s data here, be as descriptive as possible! ' +
@@ -1983,8 +1841,8 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
             eventname + r'</a></div>\n\1', html)
 
         newhtml = r'<div class="event-tab-div"><h3 class="event-tab-title">Event metadata</h3><table class="event-table"><tr><th width=100px class="event-cell">Quantity</th><th class="event-cell">Value<sup>Sources</sup> [Kind]</th></tr>\n'
-        for key in columnkey:
-            if key in catalog[entry] and key not in eventignorekey and len(
+        for key in COLUMN_KEYS:
+            if key in catalog[entry] and key not in EVENT_IGNORE_KEY and len(
                     catalog[entry][key]) > 0:
                 keyhtml = ''
                 if isinstance(catalog[entry][key], str):
@@ -2071,7 +1929,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
                 if keyhtml:
                     newhtml = (
                         newhtml + r'<tr><td class="event-cell">' +
-                        eventpageheader[key] +
+                        EVENT_PAGE_HEADER[key] +
                         r'</td><td width=250px class="event-cell">' + keyhtml)
 
                 newhtml = newhtml + r'</td></tr>\n'
@@ -2145,13 +2003,13 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         # Things David wants in this file: names (aliases), max mag, max mag
         # date (gregorian), type, redshift (helio), redshift (host), r.a.,
         # dec., # obs., link
-        snepages.append(
+        SNE_PAGES.append(
             [entry, ",".join([x['value'] for x in catalog[entry]['alias']]),
-             get_first_value(entry, 'maxappmag'),
-             get_first_value(entry, 'maxdate'),
-             get_first_value(entry, 'claimedtype'), get_first_value(
-                 entry, 'redshift'), get_first_kind(entry, 'redshift'),
-             get_first_value(entry, 'ra'), get_first_value(entry, 'dec'),
+             get_first_value(catalog, entry, 'maxappmag'),
+             get_first_value(catalog, entry, 'maxdate'),
+             get_first_value(catalog, entry, 'claimedtype'), get_first_value(catalog,
+                 entry, 'redshift'), get_first_kind(catalog, entry, 'redshift'),
+             get_first_value(catalog, entry, 'ra'), get_first_value(catalog, entry, 'dec'),
              catalog[entry]['numphoto'], 'https://sne.space/' + plotlink])
 
         if 'sources' in catalog[entry]:
@@ -2210,7 +2068,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         # Delete unneeded data from catalog, add blank entries when data
         # missing.
         catalogcopy[entry] = OrderedDict()
-        for col in columnkey:
+        for col in COLUMN_KEYS:
             if col in catalog[entry]:
                 catalogcopy[entry][col] = deepcopy(catalog[entry][col])
             else:
@@ -2240,9 +2098,9 @@ if args.writecatalog and not args.eventlist:
     if not args.boneyard:
         # Things David wants in this file: names (aliases), max mag, max mag
         # date (gregorian), type, redshift, r.a., dec., # obs., link
-        with open(outdir + htmldir + 'snepages.csv' + testsuffix, 'w') as f:
+        with open(outdir + htmldir + 'SNE_PAGES.csv' + testsuffix, 'w') as f:
             csvout = csv.writer(f, quotechar='"', quoting=csv.QUOTE_ALL)
-            for row in snepages:
+            for row in SNE_PAGES:
                 csvout.writerow(row)
 
         # Make a few small files for generating charts
@@ -2308,7 +2166,7 @@ if args.writecatalog and not args.eventlist:
                 csvout.writerow(ctype)
 
         with open(outdir + htmldir + 'sitemap.xml', 'w') as f:
-            sitemapxml = sitemaptemplate
+            sitemapxml = SITEMAP_TEMPLATE
             sitemaplocs = ''
             for key in catalog.keys():
                 sitemaplocs = sitemaplocs + "  <url>\n    <loc>https://sne.space/sne/" + \
@@ -2317,7 +2175,7 @@ if args.writecatalog and not args.eventlist:
             f.write(sitemapxml)
 
         # Ping Google to let them know sitemap has been updated
-        response = urllib.request.urlopen(googlepingurl)
+        response = urllib.request.urlopen(GOOGLE_PING_URL)
 
     # Prune extraneous fields not required for main catalog file
     catalogcopy = OrderedDict()
@@ -2355,16 +2213,16 @@ if args.writecatalog and not args.eventlist:
             '<table id="example" class="display" cellspacing="0" width="100%">\n')
         f.write('\t<thead>\n')
         f.write('\t\t<tr>\n')
-        for h in header:
-            f.write('\t\t\t<th class="' + h + '" title="' + titles[h] + '">' +
-                    header[h] + '</th>\n')
+        for h in HEADER:
+            f.write('\t\t\t<th class="' + h + '" title="' + DEF_TITLES[h] + '">' +
+                    HEADER[h] + '</th>\n')
         f.write('\t\t</tr>\n')
         f.write('\t</thead>\n')
         f.write('\t<tfoot>\n')
         f.write('\t\t<tr>\n')
-        for h in header:
-            f.write('\t\t\t<th class="' + h + '" title="' + titles[h] + '">' +
-                    header[h] + '</th>\n')
+        for h in HEADER:
+            f.write('\t\t\t<th class="' + h + '" title="' + DEF_TITLES[h] + '">' +
+                    HEADER[h] + '</th>\n')
         f.write('\t\t</tr>\n')
         f.write('\t</tfoot>\n')
         f.write('</table>\n')
