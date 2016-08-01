@@ -6,7 +6,6 @@ import importlib
 import json
 import os
 import subprocess
-import sys
 import warnings
 from collections import OrderedDict
 from glob import glob
@@ -16,9 +15,9 @@ from astrocats import __version__
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.source import SOURCE
 from astrocats.catalog.task import Task
+from astrocats.catalog.paths import Paths
 from astrocats.catalog.utils import (compress_gz, is_integer, pbar,
-                                     read_json_dict, repo_priority,
-                                     uncompress_gz, uniq_cdl)
+                                     read_json_dict, uncompress_gz, uniq_cdl)
 from tqdm import tqdm
 
 
@@ -46,118 +45,6 @@ class Catalog:
     TRAVIS_QUERY_LIMIT = 10
     COMPRESS_ABOVE_FILESIZE = 90e6   # bytes
 
-    class PATHS:
-        """Store and control catalog file-structure information.
-
-        Individual catalogs must provide the below file structure.
-        -   `repos.json`
-        -   `tasks.json`
-
-        Attributes
-        ----------
-        catalog : `astrocats.catalog.catalog.Catalog` (sub)class object
-        catalog_dir : str
-        tasks_dir : str
-        PATH_BASE : str
-        PATH_INPUT : str
-        PATH_OUTPUT : str
-        REPOS_LIST : str
-        TASK_LIST : str
-        repos_dict : dict
-            Dictionary of 'repo-types: repo-lists' key-value pairs.
-            Loaded from `REPOS_LIST` file.
-
-        Methods
-        -------
-        get_all_repo_folders : get a list of paths for all data repositories
-        get_repo_boneyard : get the path of the boneyard repository
-        get_repo_input_folders : get the paths of all input data repositories
-        get_repo_output_file_list : get the paths of all files in output repos
-        get_repo_output_folders : get the paths of all input data repositories
-
-        """
-
-        def __init__(self, catalog):
-            self.catalog = catalog
-            this_file = sys.modules[self.__module__].__file__
-            self.catalog_dir = os.path.dirname(this_file)
-            self.tasks_dir = os.path.join(self.catalog_dir, 'tasks')
-            self.PATH_BASE = os.path.join(
-                catalog.args.base_path, self.catalog_dir, '')
-            self.PATH_INPUT = os.path.join(self.PATH_BASE, 'input', '')
-            self.PATH_OUTPUT = os.path.join(self.PATH_BASE, 'output', '')
-            # critical datafiles
-            self.REPOS_LIST = os.path.join(self.PATH_INPUT, 'repos.json')
-            self.TASK_LIST = os.path.join(self.PATH_INPUT, 'tasks.json')
-            self.repos_dict = read_json_dict(self.REPOS_LIST)
-            return
-
-        def _get_repo_file_list(self, repo_folders, normal=True, bones=True):
-            """Get filenames for files in each repository, `boneyard` optional.
-            """
-            # repo_folders = get_repo_output_folders()
-            files = []
-            for rep in repo_folders:
-                if 'boneyard' not in rep and not normal:
-                    continue
-                if not bones and 'boneyard' in rep:
-                    continue
-                these_files = glob(rep + "/*.json") + glob(rep + "/*.json.gz")
-                self.catalog.log.debug("Found {} files in '{}'".format(
-                    len(these_files), rep))
-                files += these_files
-
-            return files
-
-        def get_all_repo_folders(self, boneyard=True):
-            """Get the full paths of all data repositories.
-            """
-            all_repos = self.get_repo_input_folders()
-            all_repos.extend(self.get_repo_output_folders(bones=boneyard))
-            return all_repos
-
-        def get_repo_boneyard(self):
-            bone_path = self.repos_dict['boneyard']
-            try:
-                bone_path = bone_path[0]
-            except TypeError:
-                pass
-            bone_path = os.path.join(self.PATH_OUTPUT, bone_path, '')
-            return bone_path
-
-        def get_repo_input_folders(self):
-            """Get the full paths of the input data repositories.
-            """
-            repo_folders = []
-            repo_folders += self.repos_dict['external']
-            repo_folders += self.repos_dict['internal']
-            repo_folders = list(sorted(set(repo_folders)))
-            repo_folders = [os.path.join(self.PATH_INPUT, rf)
-                            for rf in repo_folders if len(rf)]
-            return repo_folders
-
-        def get_repo_output_file_list(self, normal=True, bones=True):
-            """Get a list of all existing output files.
-
-            These are the files deleted in the `delete_old_entry_files` task.
-            """
-            repo_folders = self.get_repo_output_folders()
-            return self._get_repo_file_list(
-                repo_folders, normal=normal, bones=bones)
-
-        def get_repo_output_folders(self, bones=True):
-            """Get the full paths of the output data repositories.
-            """
-            repo_folders = []
-            repo_folders += self.repos_dict['output']
-            if bones:
-                repo_folders += self.repos_dict['boneyard']
-            repo_folders = list(sorted(list(set(repo_folders)),
-                                       key=lambda key: repo_priority(key)))
-            repo_folders = [os.path.join(self.PATH_OUTPUT, rf)
-                            for rf in repo_folders if len(rf)]
-            return repo_folders
-
     class SCHEMA:
         HASH = ''
         URL = ''
@@ -168,11 +55,11 @@ class Catalog:
         self.log = log
         self.proto = Entry
 
-        # Instantiate PATHS
-        self.PATHS = self.PATHS(self)
+        # Instantiate Paths
+        self.Paths = Paths(self)
 
         # Load repos dictionary (required)
-        self.repos_dict = read_json_dict(self.PATHS.REPOS_LIST)
+        self.repos_dict = read_json_dict(self.Paths.REPOS_LIST)
         # self.clone_repos()
         self.git_clone_all_repos()
 
@@ -187,7 +74,7 @@ class Catalog:
         # Store version information
         # -------------------------
         # git `SHA` of this directory (i.e. a sub-catalog)
-        my_path = self.PATHS.catalog_dir
+        my_path = self.Paths.catalog_dir
         git_command = ["git", "rev-parse", "--short", "HEAD"]
         self.log.debug("Running '{}' in '{}'.".format(git_command, my_path))
         catalog_sha = subprocess.check_output(git_command, cwd=my_path)
@@ -378,7 +265,7 @@ class Catalog:
     def _load_task_list_from_file(self):
         """
         """
-        def_task_list_filename = self.PATHS.TASK_LIST
+        def_task_list_filename = self.Paths.TASK_LIST
         self.log.debug(
             "Loading task-list from '{}'".format(def_task_list_filename))
         data = json.load(open(def_task_list_filename, 'r'))
@@ -404,7 +291,7 @@ class Catalog:
         there are no files to add... which we dont want to raise an error.
         FIX: improve the error checking on this.
         """
-        all_repos = self.PATHS.get_all_repo_folders()
+        all_repos = self.Paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -452,7 +339,7 @@ class Catalog:
         """
         raise RuntimeError("THIS DOESNT WORK YET!")
 
-        all_repos = self.PATHS.get_all_repo_folders()
+        all_repos = self.Paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -473,7 +360,7 @@ class Catalog:
     def git_clone_all_repos(self):
         """Perform a 'git clone' for each data repository that doesnt exist.
         """
-        all_repos = self.PATHS.get_all_repo_folders()
+        all_repos = self.Paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
 
@@ -500,7 +387,7 @@ class Catalog:
     def git_reset_all_repos(self, hard=True, origin=False, clean=True):
         """Perform a 'git reset' in each data repository.
         """
-        all_repos = self.PATHS.get_all_repo_folders()
+        all_repos = self.Paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -540,7 +427,7 @@ class Catalog:
     def git_status_all_repos(self, hard=True, origin=False, clean=True):
         """Perform a 'git status' in each data repository.
         """
-        all_repos = self.PATHS.get_all_repo_folders()
+        all_repos = self.Paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -639,7 +526,7 @@ class Catalog:
             self.log.error(err_str)
             raise RuntimeError(err_str)
         # Delete all old entry JSON files
-        repo_files = self.PATHS.get_repo_output_file_list()
+        repo_files = self.Paths.get_repo_output_file_list()
         for rfil in pbar(repo_files, desc='Deleting old entries'):
             os.remove(rfil)
             self.log.debug("Deleted '{}'".format(os.path.split(rfil)[-1]))
@@ -861,7 +748,7 @@ class Catalog:
         """
         """
         currenttask = 'Loading entry stubs'
-        files = self.PATHS.get_repo_output_file_list()
+        files = self.Paths.get_repo_output_file_list()
         for fi in pbar(files, currenttask):
             fname = fi
             # FIX: should this be ``fi.endswith(``.gz')`` ?
@@ -965,7 +852,7 @@ class Catalog:
                         os.system('cd ' + outdir + '; git rm --cached ' +
                                   filename +
                                   '.json; git add -f ' + filename +
-                                  '.json.gz; cd ' + self.PATHS.PATH_BASE)
+                                  '.json.gz; cd ' + self.Paths.PATH_BASE)
 
             if clear:
                 self.entries[name] = self.entries[name].get_stub()
@@ -999,7 +886,7 @@ class Catalog:
     def get_current_task_repo(self):
         """Get the data repository corresponding to the currently active task.
         """
-        return self.current_task._get_repo_path(self.PATHS.PATH_BASE)
+        return self.current_task._get_repo_path(self.Paths.PATH_BASE)
 
     def set_preferred_names(self):
         """Choose between each entries given name and its possible aliases for
