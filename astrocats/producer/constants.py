@@ -8,6 +8,11 @@ TRAVIS_LIMIT = 100
 
 RADIO_SIGMA = 3.0
 
+DIR_OUT = "astrocats/supernovae/output/"
+DIR_CACHE = "cache/"
+DIR_JSON = "json/"
+DIR_HTML = "html/"
+
 GOOGLE_PING_URL = "http://www.google.com/webmasters/tools/ping?sitemap=https%3A%2F%2Fsne.space%2Fsitemap.xml"
 
 SNE_LINK_DIR = "https://sne.space/sne/"

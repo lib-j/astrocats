@@ -47,7 +47,7 @@ from .utils import touch, label_format, get_first_kind, \
 
 from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS, \
     COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES, \
-    SITEMAP_TEMPLATE
+    SITEMAP_TEMPLATE, DIR_OUT, DIR_CACHE, DIR_JSON, DIR_HTML
 
 parser = argparse.ArgumentParser(
     description='Generate a catalog JSON file and plot HTML files from SNE data.')
@@ -120,15 +120,7 @@ args = parser.parse_args()
 infl = inflect.engine()
 infl.defnoun("spectrum", "spectra")
 
-outdir = "astrocats/supernovae/output/"
-cachedir = "cache/"
-jsondir = "json/"
-htmldir = "html/"
-
-
 testsuffix = '.test' if args.test else ''
-
-
 
 catalog = OrderedDict()
 catalogcopy = OrderedDict()
@@ -144,8 +136,8 @@ hasasp = []
 totalphoto = 0
 totalspectra = 0
 
-if os.path.isfile(outdir + cachedir + 'hostimgs.json'):
-    with open(outdir + cachedir + 'hostimgs.json', 'r') as f:
+if os.path.isfile(DIR_OUT + DIR_CACHE + 'hostimgs.json'):
+    with open(DIR_OUT + DIR_CACHE + 'hostimgs.json', 'r') as f:
         filetext = f.read()
     hostimgdict = json.loads(filetext)
 else:
@@ -153,8 +145,8 @@ else:
 
 files = repo_file_list(normal=(not args.boneyard), bones=args.boneyard)
 
-if os.path.isfile(outdir + cachedir + 'md5s.json'):
-    with open(outdir + cachedir + 'md5s.json', 'r') as f:
+if os.path.isfile(DIR_OUT + DIR_CACHE + 'md5s.json'):
+    with open(DIR_OUT + DIR_CACHE + 'md5s.json', 'r') as f:
         filetext = f.read()
     md5dict = json.loads(filetext)
 else:
@@ -370,13 +362,13 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
     # expensive
     dohtml = True
     if not args.forcehtml:
-        if os.path.isfile(outdir + htmldir + fileeventname + ".html"):
+        if os.path.isfile(DIR_OUT + DIR_HTML + fileeventname + ".html"):
             if not entry_changed:
                 dohtml = False
 
     # Copy JSON files up a directory if they've changed
     if dohtml:
-        shutil.copy2(eventfile, outdir + jsondir + os.path.basename(eventfile))
+        shutil.copy2(eventfile, DIR_OUT + DIR_JSON + os.path.basename(eventfile))
 
     if (photoavail or radioavail or xrayavail) and dohtml and args.writehtml:
         phototime = [
@@ -1697,13 +1689,13 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
                 except:
                     hasimage = False
                 else:
-                    with open(outdir + htmldir + fileeventname + '-host.jpg',
+                    with open(DIR_OUT + DIR_HTML + fileeventname + '-host.jpg',
                               'wb') as f:
                         f.write(resptxt)
                     imgsrc = 'SDSS'
 
                 if hasimage and filecmp.cmp(
-                        outdir + htmldir + fileeventname + '-host.jpg',
+                        DIR_OUT + DIR_HTML + fileeventname + '-host.jpg',
                         'astrocats/supernovae/input/missing.jpg'):
                     hasimage = False
 
@@ -1744,7 +1736,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
                             except:
                                 hasimage = False
                             else:
-                                with open(outdir + htmldir + fileeventname +
+                                with open(DIR_OUT + DIR_HTML + fileeventname +
                                           '-host.jpg', 'wb') as f:
                                     f.write(response.read())
                                 imgsrc = 'DSS'
@@ -1983,9 +1975,9 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
 
         html = re.sub(r'(\<\/body\>)', newhtml, html)
 
-        with gzip.open(outdir + htmldir + fileeventname + ".html.gz",
+        with gzip.open(DIR_OUT + DIR_HTML + fileeventname + ".html.gz",
                        'wt') as fff:
-            touch(outdir + htmldir + fileeventname + ".html")
+            touch(DIR_OUT + DIR_HTML + fileeventname + ".html")
             fff.write(html)
 
     # Necessary to clear Bokeh state
@@ -2085,26 +2077,26 @@ if args.writecatalog and not args.eventlist:
 
     # Write the MD5 checksums
     jsonstring = json.dumps(md5dict, indent='\t', separators=(',', ':'))
-    with open(outdir + cachedir + 'md5s.json' + testsuffix, 'w') as f:
+    with open(DIR_OUT + DIR_CACHE + 'md5s.json' + testsuffix, 'w') as f:
         f.write(jsonstring)
 
     # Write the host image info
     if args.collecthosts:
         jsonstring = json.dumps(
             hostimgdict, indent='\t', separators=(',', ':'))
-        with open(outdir + cachedir + 'hostimgs.json' + testsuffix, 'w') as f:
+        with open(DIR_OUT + DIR_CACHE + 'hostimgs.json' + testsuffix, 'w') as f:
             f.write(jsonstring)
 
     if not args.boneyard:
         # Things David wants in this file: names (aliases), max mag, max mag
         # date (gregorian), type, redshift, r.a., dec., # obs., link
-        with open(outdir + htmldir + 'SNE_PAGES.csv' + testsuffix, 'w') as f:
+        with open(DIR_OUT + DIR_HTML + 'SNE_PAGES.csv' + testsuffix, 'w') as f:
             csvout = csv.writer(f, quotechar='"', quoting=csv.QUOTE_ALL)
             for row in SNE_PAGES:
                 csvout.writerow(row)
 
         # Make a few small files for generating charts
-        with open(outdir + htmldir + 'sources.csv' + testsuffix, 'w') as f:
+        with open(DIR_OUT + DIR_HTML + 'sources.csv' + testsuffix, 'w') as f:
             sortedsources = sorted(
                 list(sourcedict.items()),
                 key=operator.itemgetter(1),
@@ -2114,7 +2106,7 @@ if args.writecatalog and not args.eventlist:
             for source in sortedsources:
                 csvout.writerow(source)
 
-        with open(outdir + htmldir + 'pie.csv' + testsuffix, 'w') as f:
+        with open(DIR_OUT + DIR_HTML + 'pie.csv' + testsuffix, 'w') as f:
             csvout = csv.writer(f)
             csvout.writerow(['Category', 'Number'])
             csvout.writerow(['Has light curve and spectra', sum(lcspye)])
@@ -2123,20 +2115,20 @@ if args.writecatalog and not args.eventlist:
             csvout.writerow(['No light curve or spectra', sum(lcspno)])
 
         with open(
-                outdir + htmldir + 'info-snippets/hasphoto.html' + testsuffix,
+                DIR_OUT + DIR_HTML + 'info-snippets/hasphoto.html' + testsuffix,
                 'w') as f:
             f.write("{:,}".format(sum(hasalc)))
-        with open(outdir + htmldir + 'info-snippets/hasspectra.html' +
+        with open(DIR_OUT + DIR_HTML + 'info-snippets/hasspectra.html' +
                   testsuffix, 'w') as f:
             f.write("{:,}".format(sum(hasasp)))
         with open(
-                outdir + htmldir + 'info-snippets/snecount.html' + testsuffix,
+                DIR_OUT + DIR_HTML + 'info-snippets/snecount.html' + testsuffix,
                 'w') as f:
             f.write("{:,}".format(len(catalog)))
-        with open(outdir + htmldir + 'info-snippets/photocount.html' +
+        with open(DIR_OUT + DIR_HTML + 'info-snippets/photocount.html' +
                   testsuffix, 'w') as f:
             f.write("{:,}".format(totalphoto))
-        with open(outdir + htmldir + 'info-snippets/spectracount.html' +
+        with open(DIR_OUT + DIR_HTML + 'info-snippets/spectracount.html' +
                   testsuffix, 'w') as f:
             f.write("{:,}".format(totalspectra))
 
@@ -2159,13 +2151,13 @@ if args.writecatalog and not args.eventlist:
                 ctypedict[cleanedtype] = 1
         sortedctypes = sorted(
             list(ctypedict.items()), key=operator.itemgetter(1), reverse=True)
-        with open(outdir + htmldir + 'types.csv' + testsuffix, 'w') as f:
+        with open(DIR_OUT + DIR_HTML + 'types.csv' + testsuffix, 'w') as f:
             csvout = csv.writer(f)
             csvout.writerow(['Type', 'Number'])
             for ctype in sortedctypes:
                 csvout.writerow(ctype)
 
-        with open(outdir + htmldir + 'sitemap.xml', 'w') as f:
+        with open(DIR_OUT + DIR_HTML + 'sitemap.xml', 'w') as f:
             sitemapxml = SITEMAP_TEMPLATE
             sitemaplocs = ''
             for key in catalog.keys():
@@ -2200,14 +2192,14 @@ if args.writecatalog and not args.eventlist:
         catprefix = 'catalog'
 
     jsonstring = json.dumps(catalog, separators=(',', ':'))
-    with open(outdir + catprefix + '.min.json' + testsuffix, 'w') as f:
+    with open(DIR_OUT + catprefix + '.min.json' + testsuffix, 'w') as f:
         f.write(jsonstring)
 
     jsonstring = json.dumps(catalog, indent='\t', separators=(',', ':'))
-    with open(outdir + catprefix + '.json' + testsuffix, 'w') as f:
+    with open(DIR_OUT + catprefix + '.json' + testsuffix, 'w') as f:
         f.write(jsonstring)
 
-    with open(outdir + htmldir + 'table-templates/' + catprefix + '.html' +
+    with open(DIR_OUT + DIR_HTML + 'table-templates/' + catprefix + '.html' +
               testsuffix, 'w') as f:
         f.write(
             '<table id="example" class="display" cellspacing="0" width="100%">\n')
@@ -2227,8 +2219,8 @@ if args.writecatalog and not args.eventlist:
         f.write('\t</tfoot>\n')
         f.write('</table>\n')
 
-    with open(outdir + catprefix + '.min.json', 'rb') as f_in, gzip.open(
-            outdir + catprefix + '.min.json.gz', 'wb') as f_out:
+    with open(DIR_OUT + catprefix + '.min.json', 'rb') as f_in, gzip.open(
+            DIR_OUT + catprefix + '.min.json.gz', 'wb') as f_out:
         shutil.copyfileobj(f_in, f_out)
 
     if not args.boneyard:
@@ -2236,7 +2228,7 @@ if args.writecatalog and not args.eventlist:
         for ev in catalog:
             names[ev['name']] = [x['value'] for x in ev['alias']]
         jsonstring = json.dumps(names, separators=(',', ':'))
-        with open(outdir + 'names.min.json' + testsuffix, 'w') as f:
+        with open(DIR_OUT + 'names.min.json' + testsuffix, 'w') as f:
             f.write(jsonstring)
 
     if args.deleteorphans and not args.boneyard:
@@ -2249,7 +2241,7 @@ if args.writecatalog and not args.eventlist:
                       'biblio.json', 'atels.json', 'cbets.json',
                       'conflicts.json', 'hosts.json', 'hosts.min.json']
 
-        for myfile in glob(outdir + jsondir + '*.json'):
+        for myfile in glob(DIR_OUT + DIR_JSON + '*.json'):
             if not os.path.basename(myfile) in safefiles:
                 print('Deleting orphan ' + myfile)
                 # os.remove(myfile)
