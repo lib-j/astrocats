@@ -58,9 +58,6 @@ class Catalog:
         # Instantiate Paths
         self.paths = Paths(self)
 
-        # Load repos dictionary (required)
-        self.repos_dict = read_json_dict(self.paths.REPOS_LIST)
-        # self.clone_repos()
         self.git_clone_all_repos()
 
         # Create empty `entries` collection
@@ -80,7 +77,7 @@ class Catalog:
         catalog_sha = subprocess.check_output(git_command, cwd=my_path)
         catalog_sha = catalog_sha.decode('ascii').strip()
         # Git SHA of `astrocats`
-        parent_path = os.path.abspath(os.path.join(my_path, os.pardir))
+        parent_path = self.paths.catalog_parent
         self.log.debug("Running '{}' in '{}'.".format(git_command, parent_path))
         astrocats_sha = subprocess.check_output(git_command, cwd=parent_path)
         astrocats_sha = astrocats_sha.decode('ascii').strip()
@@ -265,7 +262,7 @@ class Catalog:
     def _load_task_list_from_file(self):
         """
         """
-        def_task_list_filename = self.paths.TASK_LIST
+        def_task_list_filename = self.paths.task_list_fname
         self.log.debug(
             "Loading task-list from '{}'".format(def_task_list_filename))
         data = json.load(open(def_task_list_filename, 'r'))
@@ -852,7 +849,7 @@ class Catalog:
                         os.system('cd ' + outdir + '; git rm --cached ' +
                                   filename +
                                   '.json; git add -f ' + filename +
-                                  '.json.gz; cd ' + self.paths.PATH_BASE)
+                                  '.json.gz; cd ' + self.paths.catalog_dir)
 
             if clear:
                 self.entries[name] = self.entries[name].get_stub()
@@ -886,7 +883,7 @@ class Catalog:
     def get_current_task_repo(self):
         """Get the data repository corresponding to the currently active task.
         """
-        return self.current_task._get_repo_path(self.paths.PATH_BASE)
+        return self.current_task._get_repo_path(self.paths.catalog_dir)
 
     def set_preferred_names(self):
         """Choose between each entries given name and its possible aliases for
