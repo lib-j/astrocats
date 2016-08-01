@@ -42,6 +42,7 @@ class Paths:
 
     def __init__(self, catalog):
         self.catalog = catalog
+        self.log = catalog.log
         this_file = sys.modules[self.__module__].__file__
         self.catalog_dir = os.path.dirname(this_file)
         self.tasks_dir = os.path.join(self.catalog_dir, 'tasks')
@@ -66,7 +67,7 @@ class Paths:
             if not bones and 'boneyard' in rep:
                 continue
             these_files = glob(rep + "/*.json") + glob(rep + "/*.json.gz")
-            self.catalog.log.debug("Found {} files in '{}'".format(
+            self.log.debug("Found {} files in '{}'".format(
                 len(these_files), rep))
             files += these_files
 
