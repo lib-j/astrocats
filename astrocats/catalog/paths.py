@@ -4,6 +4,7 @@ from glob import glob
 import os
 import sys
 
+from astrocats import main, _ROOT_BASE_PATH
 from astrocats.catalog.utils import (compress_gz, is_integer, pbar,
                                      read_json_dict, repo_priority,
                                      uncompress_gz, uniq_cdl)
@@ -40,14 +41,22 @@ class Paths:
 
     """
 
-    def __init__(self, catalog):
-        self.catalog = catalog
-        self.log = catalog.log
-        this_file = sys.modules[self.__module__].__file__
+    def __init__(self, catalog=None, log=None):
+        if catalog is not None:
+            this_file = sys.modules[catalog.__module__].__file__
+            log = catalog.log
+        else:
+            this_file = sys.modules[self.__module__].__file__
+
+        if log is None:
+            log = main.load_log()
+
+        self.log = log
         self.catalog_dir = os.path.dirname(this_file)
         self.tasks_dir = os.path.join(self.catalog_dir, 'tasks')
-        self.PATH_BASE = os.path.join(
-            catalog.args.base_path, self.catalog_dir, '')
+        # New parameter for the overall root directory for astrocats as a whole
+        self.ROOT = str(_ROOT_BASE_PATH)
+        self.PATH_BASE = str(self.catalog_dir)
         self.PATH_INPUT = os.path.join(self.PATH_BASE, 'input', '')
         self.PATH_OUTPUT = os.path.join(self.PATH_BASE, 'output', '')
         # critical datafiles
