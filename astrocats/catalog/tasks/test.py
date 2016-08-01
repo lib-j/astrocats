@@ -44,14 +44,14 @@ def do_test(catalog):
 
     # Test repo path functions
     # ------------------------
-    paths = catalog.Paths.get_all_repo_folders()
+    paths = catalog.paths.get_all_repo_folders()
     for path in tq(paths, currenttask='Test tq progress bar.'):
         tprint('Test tprint.')
         log.debug(path)
-    paths = catalog.Paths.get_repo_input_folders()
+    paths = catalog.paths.get_repo_input_folders()
     for path in pbar_strings(paths, desc='Test pbar_strings progress bar.'):
         log.debug(path)
-    boneyard = catalog.Paths.get_repo_boneyard()
+    boneyard = catalog.paths.get_repo_boneyard()
     log.debug(boneyard)
 
     # Create a Fake Entry, with some Fake Data
@@ -439,7 +439,7 @@ def test_load_url(catalog):
 
     # Test deprecated function
     test_path = os.path.join(
-        catalog.Paths.get_repo_output_folders()[0], 'test.html')
+        catalog.paths.get_repo_output_folders()[0], 'test.html')
     catalog.load_cached_url('http://google.com', test_path)
 
     return

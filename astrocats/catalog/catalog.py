@@ -56,10 +56,10 @@ class Catalog:
         self.proto = Entry
 
         # Instantiate Paths
-        self.Paths = Paths(self)
+        self.paths = Paths(self)
 
         # Load repos dictionary (required)
-        self.repos_dict = read_json_dict(self.Paths.REPOS_LIST)
+        self.repos_dict = read_json_dict(self.paths.REPOS_LIST)
         # self.clone_repos()
         self.git_clone_all_repos()
 
@@ -74,7 +74,7 @@ class Catalog:
         # Store version information
         # -------------------------
         # git `SHA` of this directory (i.e. a sub-catalog)
-        my_path = self.Paths.catalog_dir
+        my_path = self.paths.catalog_dir
         git_command = ["git", "rev-parse", "--short", "HEAD"]
         self.log.debug("Running '{}' in '{}'.".format(git_command, my_path))
         catalog_sha = subprocess.check_output(git_command, cwd=my_path)
@@ -265,7 +265,7 @@ class Catalog:
     def _load_task_list_from_file(self):
         """
         """
-        def_task_list_filename = self.Paths.TASK_LIST
+        def_task_list_filename = self.paths.TASK_LIST
         self.log.debug(
             "Loading task-list from '{}'".format(def_task_list_filename))
         data = json.load(open(def_task_list_filename, 'r'))
@@ -291,7 +291,7 @@ class Catalog:
         there are no files to add... which we dont want to raise an error.
         FIX: improve the error checking on this.
         """
-        all_repos = self.Paths.get_all_repo_folders()
+        all_repos = self.paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -339,7 +339,7 @@ class Catalog:
         """
         raise RuntimeError("THIS DOESNT WORK YET!")
 
-        all_repos = self.Paths.get_all_repo_folders()
+        all_repos = self.paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -360,7 +360,7 @@ class Catalog:
     def git_clone_all_repos(self):
         """Perform a 'git clone' for each data repository that doesnt exist.
         """
-        all_repos = self.Paths.get_all_repo_folders()
+        all_repos = self.paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
 
@@ -387,7 +387,7 @@ class Catalog:
     def git_reset_all_repos(self, hard=True, origin=False, clean=True):
         """Perform a 'git reset' in each data repository.
         """
-        all_repos = self.Paths.get_all_repo_folders()
+        all_repos = self.paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -427,7 +427,7 @@ class Catalog:
     def git_status_all_repos(self, hard=True, origin=False, clean=True):
         """Perform a 'git status' in each data repository.
         """
-        all_repos = self.Paths.get_all_repo_folders()
+        all_repos = self.paths.get_all_repo_folders()
         for repo in all_repos:
             self.log.info("Repo in: '{}'".format(repo))
             # Get the initial git SHA
@@ -526,7 +526,7 @@ class Catalog:
             self.log.error(err_str)
             raise RuntimeError(err_str)
         # Delete all old entry JSON files
-        repo_files = self.Paths.get_repo_output_file_list()
+        repo_files = self.paths.get_repo_output_file_list()
         for rfil in pbar(repo_files, desc='Deleting old entries'):
             os.remove(rfil)
             self.log.debug("Deleted '{}'".format(os.path.split(rfil)[-1]))
@@ -748,7 +748,7 @@ class Catalog:
         """
         """
         currenttask = 'Loading entry stubs'
-        files = self.Paths.get_repo_output_file_list()
+        files = self.paths.get_repo_output_file_list()
         for fi in pbar(files, currenttask):
             fname = fi
             # FIX: should this be ``fi.endswith(``.gz')`` ?
@@ -852,7 +852,7 @@ class Catalog:
                         os.system('cd ' + outdir + '; git rm --cached ' +
                                   filename +
                                   '.json; git add -f ' + filename +
-                                  '.json.gz; cd ' + self.Paths.PATH_BASE)
+                                  '.json.gz; cd ' + self.paths.PATH_BASE)
 
             if clear:
                 self.entries[name] = self.entries[name].get_stub()
@@ -886,7 +886,7 @@ class Catalog:
     def get_current_task_repo(self):
         """Get the data repository corresponding to the currently active task.
         """
-        return self.current_task._get_repo_path(self.Paths.PATH_BASE)
+        return self.current_task._get_repo_path(self.paths.PATH_BASE)
 
     def set_preferred_names(self):
         """Choose between each entries given name and its possible aliases for
