@@ -211,7 +211,7 @@ def load_command_line_args(clargs=None):
     return args, sub_clargs
 
 
-def load_log(args):
+def load_log(args=None, debug=None, verbose=None, filename=None):
     """Load a `logging.Logger` object.
 
     Arguments
@@ -229,14 +229,24 @@ def load_log(args):
 
     # Determine verbosity ('None' means use default)
     log_stream_level = None
-    if args.debug:
-        log_stream_level = logger.DEBUG
-    elif args.verbose:
+    if verbose is not None and verbose:
         log_stream_level = logger.INFO
+    if debug is not None and debug:
+        log_stream_level = logger.DEBUG
+
+    if args is not None:
+        if log_stream_level is None:
+            if args.debug:
+                log_stream_level = logger.DEBUG
+            elif args.verbose:
+                log_stream_level = logger.INFO
+
+        # `log_filename` is None for no file
+        if filename is None:
+            filename = args.log_filename
 
     # Create log
-    log = logger.get_logger(
-        stream_level=log_stream_level, tofile=args.log_filename)
+    log = logger.get_logger(stream_level=log_stream_level, tofile=filename)
 
     return log
 
