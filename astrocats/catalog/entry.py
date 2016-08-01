@@ -128,7 +128,7 @@ class Entry(OrderedDict):
 
         # Get normal repository save directory
         else:
-            repo_folders = self.catalog.PATHS.get_repo_output_folders()
+            repo_folders = self.catalog.Paths.get_repo_output_folders()
             # If no repo folders exist, raise an error -- cannot save
             if not len(repo_folders):
                 err_str = (
@@ -476,7 +476,7 @@ class Entry(OrderedDict):
             name = ''
         # If the name is given, try to find a path for it
         else:
-            repo_paths = catalog.PATHS.get_repo_output_folders()
+            repo_paths = catalog.Paths.get_repo_output_folders()
             for rep in repo_paths:
                 filename = cls.get_filename(name)
                 newpath = os.path.join(rep, filename + '.json')

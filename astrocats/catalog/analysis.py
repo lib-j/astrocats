@@ -79,7 +79,7 @@ class Analysis:
         # Number which are active by default
         num_tasks_act = len([tt for tt, vv in tasks.items() if vv.active])
         # Number of python files in the tasks directory
-        num_task_files = os.path.join(self.catalog.PATHS.tasks_dir, '*.py')
+        num_task_files = os.path.join(self.catalog.Paths.tasks_dir, '*.py')
         num_task_files = len(glob(num_task_files))
         tasks_str = "{} ({} default active) with {} task-files.".format(
             num_tasks, num_tasks_act, num_task_files)
@@ -101,7 +101,7 @@ class Analysis:
         """
         self.log.warning("Files:")
         num_files = 0
-        repos = self.catalog.PATHS.get_all_repo_folders()
+        repos = self.catalog.Paths.get_all_repo_folders()
         num_type = np.zeros(len(self._COUNT_FILE_TYPES), dtype=int)
         num_ign = 0
         for rep in repos:
