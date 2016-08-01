@@ -27,6 +27,19 @@ The ['change-log' (below)](#changelog) in this file should summarize **all API c
 
 
 ### Current ###
+- `separate-paths` branch
+    - Name Changes:
+        - `PATHS` ==> `Paths` in `astrocats/catalog/paths.py`.
+        - `BASE_PATH` ==> `catalog_dir`
+        - `PATH_INPUT` ==> `input`
+        - `PATH_OUTPUT` ==> `output`
+        - `REPOS_LIST` ==> `repos_list_fname`
+        - `TASK_LIST` ==> `task_list_fname`
+    - New `Paths` class.
+        - This class is a slightly modified version of the `PATHS` class which used to be contained in each catalog (e.g. `astrocats.catalog.catalog.Catalog.PATHS`).
+        - The arguments for initialization are now `Paths(catalog=None, log=None)`.
+            - The `catalog` argument can either be a `Catalog` (subclass) instance, in which case the location of the defining file is used to determine the catalog path.  Alternatively, the `catalog` argument can simply be a string specifying the catalog directory explicitly either the short name (e.g. `supernovae`) or the full path (e.g. `/Users/lzkelley/Research/catalogs/astrocats/astrocats/supernovae`)
+
 
 - Added a new `Analysis` class in [astrocats/catalog/analysis.py](https://github.com/astrocatalogs/astrocats/blob/master/astrocats/catalog/analysis.py).
     - Basic 'count' functionality to report the number of files and tasks in each catalog.
