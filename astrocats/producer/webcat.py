@@ -47,7 +47,7 @@ from .utils import touch, label_format, get_first_kind, \
 
 from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS, \
     COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES, \
-    SITEMAP_TEMPLATE, DIR_OUT, DIR_CACHE, DIR_JSON, DIR_HTML
+    SITEMAP_TEMPLATE, DIR_OUT, DIR_CACHE, DIR_JSON, DIR_HTML, TOOLS_LIST
 
 
 def load_args():
@@ -362,8 +362,6 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         if len(bandlist) > 0:
             catalog[entry]['instruments'] = ", ".join(bandlist)
 
-    tools = "pan,wheel_zoom,box_zoom,save,crosshair,reset,resize"
-
     # Check file modification times before constructing .html files, which is
     # expensive
     dohtml = True
@@ -488,7 +486,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
             active_drag='box_zoom',
             # sizing_mode = "scale_width",
             y_axis_label='Apparent Magnitude',
-            tools=tools,
+            TOOLS_LIST=TOOLS_LIST,
             plot_width=485,
             plot_height=485,
             x_range=(min_x_range, max_x_range),
@@ -868,7 +866,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
 
         p2 = Figure(title='Spectra for ' + event_name, x_axis_label=label_format('Observed Wavelength (Å)'), active_drag='box_zoom',
                     y_axis_label=label_format('Flux (scaled)' + (' + offset'
-                                                                 if (nspec > 1) else '')), x_range=x_range, tools=tools,  # sizing_mode = "scale_width",
+                                                                 if (nspec > 1) else '')), x_range=x_range, TOOLS_LIST=TOOLS_LIST,  # sizing_mode = "scale_width",
                     plot_width=485, plot_height=485, y_range=y_range, toolbar_location='above', toolbar_sticky=False)
         p2.xaxis.axis_label_text_font = 'futura'
         p2.yaxis.axis_label_text_font = 'futura'
@@ -1099,7 +1097,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
             active_drag='box_zoom',
             # sizing_mode = "scale_width",
             y_axis_label='Flux Density (µJy)',
-            tools=tools,
+            TOOLS_LIST=TOOLS_LIST,
             plot_width=485,
             plot_height=485,
             x_range=x_range,
@@ -1430,7 +1428,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
             active_drag='box_zoom',
             # sizing_mode = "scale_width",
             y_axis_label='Flux (ergs s⁻¹ cm⁻²)',
-            tools=tools,
+            TOOLS_LIST=TOOLS_LIST,
             plot_width=485,
             plot_height=485,
             x_range=x_range,
@@ -1753,7 +1751,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
             if imgsrc == 'SDSS':
                 hostimgdict[event_name] = 'SDSS'
                 skyhtml = (
-                    '<a href="http://skyserver.sdss.org/DR12/en/tools/chart/navi.aspx?opt=G&ra='
+                    '<a href="http://skyserver.sdss.org/DR12/en/TOOLS_LIST/chart/navi.aspx?opt=G&ra='
                     + str(c.ra.deg) + '&dec=' + str(c.dec.deg) +
                     '&scale=0.15"><img src="' + event_file_name +
                     '-host.jpg" width=250></a>')

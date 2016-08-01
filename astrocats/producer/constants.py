@@ -13,6 +13,8 @@ DIR_CACHE = "cache/"
 DIR_JSON = "json/"
 DIR_HTML = "html/"
 
+TOOLS_LIST = "pan,wheel_zoom,box_zoom,save,crosshair,reset,resize"
+
 GOOGLE_PING_URL = "http://www.google.com/webmasters/tools/ping?sitemap=https%3A%2F%2Fsne.space%2Fsitemap.xml"
 
 SNE_LINK_DIR = "https://sne.space/sne/"
