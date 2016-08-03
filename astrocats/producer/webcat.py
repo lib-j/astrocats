@@ -1,5 +1,5 @@
-#!/usr/local/bin/python3.5
-import argparse
+"""
+"""
 import csv
 import filecmp
 import gzip
@@ -39,7 +39,7 @@ from astrocats.catalog.utils import (bandaliasf, bandcolorf,
                                      round_sig, tprint, tq, xraycolorf)
 from astrocats.supernovae.scripts.events import (get_event_filename,
                                                  get_event_text)
-from astrocats.supernovae.scripts.repos import get_rep_folder, repo_file_list
+# from astrocats.supernovae.scripts.repos import get_rep_folder, repo_file_list
 from cdecimal import Decimal
 
 from .utils import touch, label_format, get_first_kind, \
@@ -52,16 +52,16 @@ from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR,
 
 def main(catalog):
     args = catalog.args
+    paths = catalog.paths
+    log = catalog.log
 
     infl = inflect.engine()
     infl.defnoun("spectrum", "spectra")
-
     testsuffix = '.test' if args.test else ''
 
     catalogcopy = OrderedDict()
 
     sourcedict = {}
-    nophoto = []
     lcspye = []
     lcspno = []
     lconly = []
@@ -71,23 +71,16 @@ def main(catalog):
     totalphoto = 0
     totalspectra = 0
 
-    if os.path.isfile(DIR_OUT + DIR_CACHE + 'hostimgs.json'):
-        with open(DIR_OUT + DIR_CACHE + 'hostimgs.json', 'r') as f:
-            file_text = f.read()
-        hostimgdict = json.loads(file_text)
-    else:
-        hostimgdict = {}
+    # Host Images File
+    host_img_dict = load_dict_file(paths.host_imgs_file, log)
 
-    files = repo_file_list(normal=(not args.boneyard), bones=args.boneyard)
+    # MD5 Hash File
+    md5_dict = load_dict_file(paths.md5_file, log)
 
-    if os.path.isfile(DIR_OUT + DIR_CACHE + 'md5s.json'):
-        with open(DIR_OUT + DIR_CACHE + 'md5s.json', 'r') as f:
-            file_text = f.read()
-        md5dict = json.loads(file_text)
-    else:
-        md5dict = {}
-
-    for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
+    files = catalog.paths.get_repo_output_file_list(
+        normal=(not args.boneyard), bones=args.boneyard)
+    files = sorted(files, key=lambda ss: ss.lower())
+    for fcnt, eventfile in enumerate(tq(files)):
         event_file_name = os.path.splitext(os.path.basename(eventfile))[0].replace(
             '.json', '')
         if args.eventlist and event_file_name not in args.eventlist:
@@ -98,9 +91,9 @@ def main(catalog):
 
         entry_changed = False
         checksum = md5file(eventfile)
-        if eventfile not in md5dict or md5dict[eventfile] != checksum:
+        if eventfile not in md5_dict or md5_dict[eventfile] != checksum:
             entry_changed = True
-            md5dict[eventfile] = checksum
+            md5_dict[eventfile] = checksum
 
         file_text = get_event_text(eventfile)
 
@@ -114,20 +107,21 @@ def main(catalog):
 
         tprint(eventfile + ' [' + checksum + ']')
 
-        repfolder = get_rep_folder(catalog[entry])
-        if os.path.isfile("astrocats/supernovae/input/sne-internal/" +
-                          event_file_name + ".json"):
+        internal_repo = catalog.paths.repos_dict['internal']
+        internal_file = os.path.join(internal_repo, event_file_name + ".json")
+        if os.path.isfile(internal_file):
             catalog[entry]['download'] = 'e'
         else:
             catalog[entry]['download'] = ''
+
         if 'discoverdate' in catalog[entry]:
             for d, date in enumerate(catalog[entry]['discoverdate']):
-                catalog[entry]['discoverdate'][d]['value'] = catalog[entry][
-                    'discoverdate'][d]['value'].split('.')[0]
+                catalog[entry]['discoverdate'][d]['value'] = \
+                    catalog[entry]['discoverdate'][d]['value'].split('.')[0]
         if 'maxdate' in catalog[entry]:
             for d, date in enumerate(catalog[entry]['maxdate']):
-                catalog[entry]['maxdate'][d]['value'] = catalog[entry]['maxdate'][
-                    d]['value'].split('.')[0]
+                catalog[entry]['maxdate'][d]['value'] = \
+                    catalog[entry]['maxdate'][d]['value'].split('.')[0]
 
         hostmag = ''
         hosterr = ''
@@ -246,11 +240,11 @@ def main(catalog):
         prange = list(range(len(catalog[entry][
             'photometry']))) if 'photometry' in catalog[entry] else []
 
-        instrulist = sorted([_f
-                             for _f in list({catalog[entry]['photometry'][x][
-                                 'instrument'] if 'instrument' in catalog[entry][
-                                     'photometry'][x] else None
-                                             for x in prange}) if _f])
+        instrulist = {catalog[entry]['photometry'][x]['instrument']
+                      if 'instrument' in catalog[entry]['photometry'][x]
+                      else None
+                      for x in prange}
+        instrulist = sorted([_f for _f in list(instrulist) if _f])
         if len(instrulist) > 0:
             instruments = ''
             for i, instru in enumerate(instrulist):
@@ -1607,8 +1601,8 @@ def main(catalog):
 
                 imgsrc = ''
                 hasimage = True
-                if event_name in hostimgdict:
-                    imgsrc = hostimgdict[event_name]
+                if event_name in host_img_dict:
+                    imgsrc = host_img_dict[event_name]
                 else:
                     try:
                         response = urllib.request.urlopen(
@@ -1678,14 +1672,14 @@ def main(catalog):
 
             if hasimage:
                 if imgsrc == 'SDSS':
-                    hostimgdict[event_name] = 'SDSS'
+                    host_img_dict[event_name] = 'SDSS'
                     skyhtml = (
                         '<a href="http://skyserver.sdss.org/DR12/en/TOOLS_LIST/chart/navi.aspx?opt=G&ra='
                         + str(c.ra.deg) + '&dec=' + str(c.dec.deg) +
                         '&scale=0.15"><img src="' + event_file_name +
                         '-host.jpg" width=250></a>')
                 elif imgsrc == 'DSS':
-                    hostimgdict[event_name] = 'DSS'
+                    host_img_dict[event_name] = 'DSS'
                     url = (
                         "http://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Position="
                         + str(urllib.parse.quote_plus(snra + " " + sndec)) +
@@ -1699,7 +1693,7 @@ def main(catalog):
                     skyhtml = ('<a href="' + url + '"><img src="' + event_file_name +
                                '-host.jpg" width=250></a>')
             else:
-                hostimgdict[event_name] = 'None'
+                host_img_dict[event_name] = 'None'
 
         if dohtml and args.writehtml:
             # if (photoavail and spectraavail) and dohtml and args.writehtml:
@@ -1751,7 +1745,6 @@ def main(catalog):
                     this.location="''' + event_name + '''"\n
                 </script>''', html)
 
-            repfolder = get_rep_folder(catalog[entry])
             html = re.sub(
                 r'(\<\/body\>)', '<div class="event-download">' + r'<a href="' +
                 SNE_LINK_DIR + event_file_name + r'.json" download>' +
@@ -2009,14 +2002,14 @@ def main(catalog):
         catalog = deepcopy(catalogcopy)
 
         # Write the MD5 checksums
-        jsonstring = json.dumps(md5dict, indent='\t', separators=(',', ':'))
+        jsonstring = json.dumps(md5_dict, indent='\t', separators=(',', ':'))
         with open(DIR_OUT + DIR_CACHE + 'md5s.json' + testsuffix, 'w') as f:
             f.write(jsonstring)
 
         # Write the host image info
         if args.collecthosts:
             jsonstring = json.dumps(
-                hostimgdict, indent='\t', separators=(',', ':'))
+                host_img_dict, indent='\t', separators=(',', ':'))
             with open(DIR_OUT + DIR_CACHE + 'hostimgs.json' + testsuffix, 'w') as f:
                 f.write(jsonstring)
 
@@ -2179,3 +2172,16 @@ def main(catalog):
                     print('Deleting orphan ' + myfile)
                     # os.remove(myfile)
     return
+
+
+def load_dict_file(fname, log):
+    log_str = "File '{}'".format(fname)
+    if os.path.isfile(fname):
+        fdict = json.load(open(fname, 'r'))
+        log_str += " loaded."
+        log.debug(log_str)
+    else:
+        fdict = {}
+        log_str += " does not exist.  Initializing empty dictionary."
+        log.info(log_str)
+    return fdict
