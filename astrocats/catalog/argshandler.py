@@ -18,6 +18,13 @@ class ArgsHandler:
             self.log.info("Running 'import'.")
             catalog.import_data()
 
+        # Producer
+        # --------
+        elif args.subcommand == 'produce':
+            self.log.info("Running 'produce'.")
+            from astrocats.producer import webcat
+            webcat.main(catalog)
+
         # Git Subcommands
         # ---------------
         elif args.subcommand == 'git-clone':
@@ -80,6 +87,11 @@ class ArgsHandler:
         # Add the 'import' command, and related arguments
         self._add_parser_arguments_import(subparsers)
 
+        # Producer
+        # --------
+        # Add the 'import' command, and related arguments
+        self._add_parser_arguments_produce(subparsers)
+
         # Git Subcommands
         # ---------------
         self._add_parser_arguments_git(subparsers)
@@ -131,6 +143,52 @@ class ArgsHandler:
             help='predefined group(s) of tasks to run.')
 
         return import_pars
+
+    def _add_parser_arguments_produce(self, subparsers):
+        """Create parser for 'produce' subcommand, and associated arguments.
+        """
+        produce_pars = subparsers.add_parser(
+            "produce", help="Generate a catalog JSON file and plot HTML files from SNE data.")
+
+        produce_pars.add_argument(
+            '--no-write-catalog', '-nwc',
+            dest='writecatalog', default=True, action='store_false',
+            help="Don't write catalog file")
+        produce_pars.add_argument(
+            '--no-write-html', '-nwh',
+            dest='writehtml', default=True, action='store_false',
+            help='Don\'t write html plot files')
+        produce_pars.add_argument(
+            '--no-collect-hosts', '-nch',
+            dest='collecthosts', default=True, action='store_false',
+            help='Don\'t collect host galaxy images')
+        produce_pars.add_argument(
+            '--force-html', '-fh',
+            dest='forcehtml', default=False,
+            help='Force write html plot files',
+            action='store_true')
+        produce_pars.add_argument(
+            '--event-list', '-el',
+            dest='eventlist', default=[], type=str, nargs='+',
+            help='Process a list of events')
+        produce_pars.add_argument(
+            '--test', '-te',
+            dest='test', default=False, action='store_true',
+            help='Test this script')
+        produce_pars.add_argument(
+            '--travis', '-tr',
+            dest='travis', default=False, action='store_true',
+            help='Set some options when using Travis')
+        produce_pars.add_argument(
+            '--boneyard', '-by',
+            dest='boneyard', default=False, action='store_true',
+            help='Make "boneyard" catalog')
+        produce_pars.add_argument(
+            '--delete-orphans', '-do',
+            dest='deleteorphans', default=False, action='store_true',
+            help='Delete orphan JSON files')
+
+        return produce_pars
 
     def _add_parser_arguments_git(self, subparsers):
         """Create a sub-parsers for git subcommands.
