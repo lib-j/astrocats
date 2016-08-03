@@ -17,7 +17,7 @@ from astrocats.catalog.source import SOURCE
 from astrocats.catalog.task import Task
 from astrocats.catalog.paths import Paths
 from astrocats.catalog.utils import (compress_gz, is_integer, pbar,
-                                     read_json_dict, uncompress_gz, uniq_cdl)
+                                     uncompress_gz, uniq_cdl)
 from tqdm import tqdm
 
 
