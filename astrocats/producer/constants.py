@@ -8,10 +8,10 @@ TRAVIS_LIMIT = 100
 
 RADIO_SIGMA = 3.0
 
-DIR_OUT = "astrocats/supernovae/output/"
-DIR_CACHE = "cache/"
-DIR_JSON = "json/"
-DIR_HTML = "html/"
+# DIR_OUT = "astrocats/supernovae/output/"
+# DIR_CACHE = "cache/"
+# DIR_JSON = "json/"
+# DIR_HTML = "html/"
 
 TOOLS_LIST = "pan,wheel_zoom,box_zoom,save,crosshair,reset,resize"
 

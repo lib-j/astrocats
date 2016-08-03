@@ -76,7 +76,9 @@ class Paths:
         self.tasks_dir = os.path.join(self.catalog_dir, 'tasks')
         self.input = os.path.join(self.catalog_dir, 'input', '')
         self.output = os.path.join(self.catalog_dir, 'output', '')
-        self.cache = os.path.join(self.output, 'cache')
+        self.output_cache = os.path.join(self.output, 'cache')
+        self.output_html = os.path.join(self.output, 'html')
+        self.output_json = os.path.join(self.output, 'json')
 
         # Catalog data files
         self.repos_list_fname = os.path.join(self.input, 'repos.json')
