@@ -39,7 +39,6 @@ from astrocats.catalog.utils import (bandaliasf, bandcolorf,
                                      round_sig, tprint, tq, xraycolorf)
 from astrocats.supernovae.scripts.events import (get_event_filename,
                                                  get_event_text)
-# from astrocats.supernovae.scripts.repos import get_rep_folder, repo_file_list
 from cdecimal import Decimal
 
 from .utils import touch, label_format, get_first_kind, \
@@ -47,7 +46,7 @@ from .utils import touch, label_format, get_first_kind, \
 
 from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS, \
     COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES, \
-    SITEMAP_TEMPLATE, TOOLS_LIST
+    SITEMAP_TEMPLATE, TOOLS_LIST, SAFE_FILES
 
 
 def main(catalog):
@@ -1593,7 +1592,7 @@ def main(catalog):
                 #        sdssimagescale = 0.006
                 #    else:
                 #    sdssimagescale = 0.5
-                #dssimagescale = 0.13889*sdssimagescale
+                # dssimagescale = 0.13889*sdssimagescale
                 # At the moment, no way to check if host is in SDSS footprint
                 # without comparing to empty image, which is only possible at fixed
                 # angular resolution.
@@ -1925,9 +1924,11 @@ def main(catalog):
                 [entry, ",".join([x['value'] for x in catalog[entry]['alias']]),
                  get_first_value(catalog, entry, 'maxappmag'),
                  get_first_value(catalog, entry, 'maxdate'),
-                 get_first_value(catalog, entry, 'claimedtype'), get_first_value(catalog,
-                     entry, 'redshift'), get_first_kind(catalog, entry, 'redshift'),
-                 get_first_value(catalog, entry, 'ra'), get_first_value(catalog, entry, 'dec'),
+                 get_first_value(catalog, entry, 'claimedtype'),
+                 get_first_value(catalog, entry, 'redshift'),
+                 get_first_kind(catalog, entry, 'redshift'),
+                 get_first_value(catalog, entry, 'ra'),
+                 get_first_value(catalog, entry, 'dec'),
                  catalog[entry]['numphoto'], 'https://sne.space/' + plotlink])
 
             if 'sources' in catalog[entry]:
@@ -2159,13 +2160,7 @@ def main(catalog):
         if args.deleteorphans and not args.boneyard:
 
             safefiles = [os.path.basename(x) for x in files]
-            safefiles += ['catalog.json', 'catalog.min.json', 'bones.json',
-                          'bones.min.json', 'names.min.json', 'md5s.json',
-                          'hostimgs.json', 'iaucs.json', 'errata.json',
-                          'bibauthors.json', 'extinctions.json', 'dupes.json',
-                          'biblio.json', 'atels.json', 'cbets.json',
-                          'conflicts.json', 'hosts.json', 'hosts.min.json']
-
+            safefiles += SAFE_FILES
             for myfile in glob(paths.output_json + '*.json'):
                 if not os.path.basename(myfile) in safefiles:
                     print('Deleting orphan ' + myfile)
