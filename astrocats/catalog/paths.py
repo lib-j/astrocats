@@ -78,11 +78,14 @@ class Paths:
         self.tasks_dir = os.path.join(self.catalog_dir, 'tasks')
         self.input = os.path.join(self.catalog_dir, 'input', '')
         self.output = os.path.join(self.catalog_dir, 'output', '')
+        self.cache = os.path.join(self.output, 'cache')
 
         # Catalog data files
         self.repos_list_fname = os.path.join(self.input, 'repos.json')
         self.task_list_fname = os.path.join(self.input, 'tasks.json')
         self.repos_dict = read_json_dict(self.repos_list_fname)
+        self.md5_file = os.path.join(self.output, 'md5s.json')
+        self.host_imgs_file = os.path.join(self.output, 'hostimgs.json')
         return
 
     def _get_repo_file_list(self, repo_folders, normal=True, bones=True):
