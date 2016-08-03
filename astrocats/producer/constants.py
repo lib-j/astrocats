@@ -70,6 +70,12 @@ SNE_PAGES = [["# name", "aliases", "max apparent mag", "max mag date",
               "claimed type", "redshift", "redshift kind", "ra", "dec",
               "# of photometric obs.", "URL"]]
 
+SAFE_FILES = ['catalog.json', 'catalog.min.json', 'bones.json',
+              'bones.min.json', 'names.min.json', 'md5s.json',
+              'hostimgs.json', 'iaucs.json', 'errata.json',
+              'bibauthors.json', 'extinctions.json', 'dupes.json',
+              'biblio.json', 'atels.json', 'cbets.json',
+              'conflicts.json', 'hosts.json', 'hosts.min.json']
 
 with open('astrocats/supernovae/html/sitemap-template.xml', 'r') as f:
     SITEMAP_TEMPLATE = f.read()
