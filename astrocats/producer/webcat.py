@@ -47,7 +47,7 @@ from .utils import touch, label_format, get_first_kind, \
 
 from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS, \
     COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES, \
-    SITEMAP_TEMPLATE, DIR_OUT, DIR_CACHE, DIR_JSON, DIR_HTML, TOOLS_LIST
+    SITEMAP_TEMPLATE, TOOLS_LIST
 
 
 def main(catalog):
@@ -137,6 +137,8 @@ def main(catalog):
             catalog[entry]['photometry'][:] = [
                 x for x in catalog[entry]['photometry'] if 'host' not in x
             ]
+
+        ## FIX: if 'photometry' is not in entry, add empty list... will make everything easier!
 
         photoavail = 'photometry' in catalog[entry] and any(
             ['magnitude' in x for x in catalog[entry]['photometry']])
@@ -289,13 +291,13 @@ def main(catalog):
         # expensive
         dohtml = True
         if not args.forcehtml:
-            if os.path.isfile(DIR_OUT + DIR_HTML + event_file_name + ".html"):
+            if os.path.isfile(paths.output_html + event_file_name + ".html"):
                 if not entry_changed:
                     dohtml = False
 
         # Copy JSON files up a directory if they've changed
         if dohtml:
-            shutil.copy2(eventfile, DIR_OUT + DIR_JSON + os.path.basename(eventfile))
+            shutil.copy2(eventfile, paths.output_json + os.path.basename(eventfile))
 
         if (photoavail or radioavail or xrayavail) and dohtml and args.writehtml:
             phototime = [
@@ -681,7 +683,6 @@ def main(catalog):
                               for x in catalog[entry]['spectra']]))
             for spectrum in catalog[entry]['spectra']:
                 spectrumdata = deepcopy(spectrum['data'])
-                oldlen = len(spectrumdata)
                 specslice = ceil(float(len(spectrumdata)) / 10000)
                 spectrumdata = spectrumdata[::specslice]
                 spectrumdata = [x for x in spectrumdata
@@ -1616,13 +1617,13 @@ def main(catalog):
                     except:
                         hasimage = False
                     else:
-                        with open(DIR_OUT + DIR_HTML + event_file_name + '-host.jpg',
+                        with open(paths.output_html + event_file_name + '-host.jpg',
                                   'wb') as f:
                             f.write(resptxt)
                         imgsrc = 'SDSS'
 
                     if hasimage and filecmp.cmp(
-                            DIR_OUT + DIR_HTML + event_file_name + '-host.jpg',
+                            paths.output_html + event_file_name + '-host.jpg',
                             'astrocats/supernovae/input/missing.jpg'):
                         hasimage = False
 
@@ -1663,7 +1664,7 @@ def main(catalog):
                                 except:
                                     hasimage = False
                                 else:
-                                    with open(DIR_OUT + DIR_HTML + event_file_name +
+                                    with open(paths.output_html + event_file_name +
                                               '-host.jpg', 'wb') as f:
                                         f.write(response.read())
                                     imgsrc = 'DSS'
@@ -1731,7 +1732,7 @@ def main(catalog):
             # elif spectraavail:
             #    html = html + div['p2'] + div['binslider'] + div['spacingslider']
 
-            #html = html + '</body></html>'
+            # html = html + '</body></html>'
 
             html = html.replace(
                 '<body>',
@@ -1791,7 +1792,6 @@ def main(catalog):
                                         key=lambda x: float(x) if is_number(x) else float("inf"))
                                 ]
                                 sourcehtml = ''
-                                sourcecsv = ','.join(sources)
                                 for s, source in enumerate(sources):
                                     sourcehtml = sourcehtml + \
                                         (', ' if s > 0 else '') + r'<a href="#source' + \
@@ -1825,9 +1825,8 @@ def main(catalog):
                                                 sourceids.append(source['name'])
                                                 idtypes.append('name')
                                 if not sourceids or not idtypes:
-                                    raise (ValueError(
+                                    raise ValueError(
                                         'Unable to find associated source by alias!')
-                                           )
                                 edit = "true" if os.path.isfile(
                                     'astrocats/supernovae/input/sne-internal/' +
                                     get_event_filename(
@@ -1851,6 +1850,7 @@ def main(catalog):
                             r'</td><td width=250px class="event-cell">' + keyhtml)
 
                     newhtml = newhtml + r'</td></tr>\n'
+
             newhtml = newhtml + r'</table><em>Values that are colored <span class="derived">purple</span> were computed by the OSC using values provided by the specified sources.</em></div>\n\1'
             html = re.sub(r'(\<\/body\>)', newhtml, html)
 
@@ -1901,9 +1901,9 @@ def main(catalog):
 
             html = re.sub(r'(\<\/body\>)', newhtml, html)
 
-            with gzip.open(DIR_OUT + DIR_HTML + event_file_name + ".html.gz",
-                           'wt') as fff:
-                touch(DIR_OUT + DIR_HTML + event_file_name + ".html")
+            html_filename = paths.output_html + event_file_name + ".html"
+            with gzip.open(html_filename + ".gz", 'wt') as fff:
+                touch(html_filename)
                 fff.write(html)
 
         # Necessary to clear Bokeh state
@@ -1964,7 +1964,6 @@ def main(catalog):
                     key=lambda x: x['count'],
                     reverse=True)
                 if ssources:
-                    seemorelink = ''
                     catalog[entry]['references'] = ','.join(
                         [y['bibcode'] for y in ssources[:5]])
 
@@ -2003,26 +2002,26 @@ def main(catalog):
 
         # Write the MD5 checksums
         jsonstring = json.dumps(md5_dict, indent='\t', separators=(',', ':'))
-        with open(DIR_OUT + DIR_CACHE + 'md5s.json' + testsuffix, 'w') as f:
+        with open(paths.md5_file + testsuffix, 'w') as f:
             f.write(jsonstring)
 
         # Write the host image info
         if args.collecthosts:
             jsonstring = json.dumps(
                 host_img_dict, indent='\t', separators=(',', ':'))
-            with open(DIR_OUT + DIR_CACHE + 'hostimgs.json' + testsuffix, 'w') as f:
+            with open(paths.host_imgs_file + testsuffix, 'w') as f:
                 f.write(jsonstring)
 
         if not args.boneyard:
             # Things David wants in this file: names (aliases), max mag, max mag
             # date (gregorian), type, redshift, r.a., dec., # obs., link
-            with open(DIR_OUT + DIR_HTML + 'SNE_PAGES.csv' + testsuffix, 'w') as f:
+            with open(paths.output_html + 'SNE_PAGES.csv' + testsuffix, 'w') as f:
                 csvout = csv.writer(f, quotechar='"', quoting=csv.QUOTE_ALL)
                 for row in SNE_PAGES:
                     csvout.writerow(row)
 
             # Make a few small files for generating charts
-            with open(DIR_OUT + DIR_HTML + 'sources.csv' + testsuffix, 'w') as f:
+            with open(paths.output_html + 'sources.csv' + testsuffix, 'w') as f:
                 sortedsources = sorted(
                     list(sourcedict.items()),
                     key=operator.itemgetter(1),
@@ -2032,7 +2031,7 @@ def main(catalog):
                 for source in sortedsources:
                     csvout.writerow(source)
 
-            with open(DIR_OUT + DIR_HTML + 'pie.csv' + testsuffix, 'w') as f:
+            with open(paths.output_html + 'pie.csv' + testsuffix, 'w') as f:
                 csvout = csv.writer(f)
                 csvout.writerow(['Category', 'Number'])
                 csvout.writerow(['Has light curve and spectra', sum(lcspye)])
@@ -2041,20 +2040,20 @@ def main(catalog):
                 csvout.writerow(['No light curve or spectra', sum(lcspno)])
 
             with open(
-                    DIR_OUT + DIR_HTML + 'info-snippets/hasphoto.html' + testsuffix,
+                    paths.output_html + 'info-snippets/hasphoto.html' + testsuffix,
                     'w') as f:
                 f.write("{:,}".format(sum(hasalc)))
-            with open(DIR_OUT + DIR_HTML + 'info-snippets/hasspectra.html' +
+            with open(paths.output_html + 'info-snippets/hasspectra.html' +
                       testsuffix, 'w') as f:
                 f.write("{:,}".format(sum(hasasp)))
             with open(
-                    DIR_OUT + DIR_HTML + 'info-snippets/snecount.html' + testsuffix,
+                    paths.output_html + 'info-snippets/snecount.html' + testsuffix,
                     'w') as f:
                 f.write("{:,}".format(len(catalog)))
-            with open(DIR_OUT + DIR_HTML + 'info-snippets/photocount.html' +
+            with open(paths.output_html + 'info-snippets/photocount.html' +
                       testsuffix, 'w') as f:
                 f.write("{:,}".format(totalphoto))
-            with open(DIR_OUT + DIR_HTML + 'info-snippets/spectracount.html' +
+            with open(paths.output_html + 'info-snippets/spectracount.html' +
                       testsuffix, 'w') as f:
                 f.write("{:,}".format(totalspectra))
 
@@ -2077,13 +2076,13 @@ def main(catalog):
                     ctypedict[cleanedtype] = 1
             sortedctypes = sorted(
                 list(ctypedict.items()), key=operator.itemgetter(1), reverse=True)
-            with open(DIR_OUT + DIR_HTML + 'types.csv' + testsuffix, 'w') as f:
+            with open(paths.output_html + 'types.csv' + testsuffix, 'w') as f:
                 csvout = csv.writer(f)
                 csvout.writerow(['Type', 'Number'])
                 for ctype in sortedctypes:
                     csvout.writerow(ctype)
 
-            with open(DIR_OUT + DIR_HTML + 'sitemap.xml', 'w') as f:
+            with open(paths.output_html + 'sitemap.xml', 'w') as f:
                 sitemapxml = SITEMAP_TEMPLATE
                 sitemaplocs = ''
                 for key in catalog.keys():
@@ -2118,14 +2117,14 @@ def main(catalog):
             catprefix = 'catalog'
 
         jsonstring = json.dumps(catalog, separators=(',', ':'))
-        with open(DIR_OUT + catprefix + '.min.json' + testsuffix, 'w') as f:
+        with open(paths.output + catprefix + '.min.json' + testsuffix, 'w') as f:
             f.write(jsonstring)
 
         jsonstring = json.dumps(catalog, indent='\t', separators=(',', ':'))
-        with open(DIR_OUT + catprefix + '.json' + testsuffix, 'w') as f:
+        with open(paths.output + catprefix + '.json' + testsuffix, 'w') as f:
             f.write(jsonstring)
 
-        with open(DIR_OUT + DIR_HTML + 'table-templates/' + catprefix + '.html' +
+        with open(paths.output_html + 'table-templates/' + catprefix + '.html' +
                   testsuffix, 'w') as f:
             f.write(
                 '<table id="example" class="display" cellspacing="0" width="100%">\n')
@@ -2145,8 +2144,8 @@ def main(catalog):
             f.write('\t</tfoot>\n')
             f.write('</table>\n')
 
-        with open(DIR_OUT + catprefix + '.min.json', 'rb') as f_in, gzip.open(
-                DIR_OUT + catprefix + '.min.json.gz', 'wb') as f_out:
+        with open(paths.output + catprefix + '.min.json', 'rb') as f_in, gzip.open(
+                paths.output + catprefix + '.min.json.gz', 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
 
         if not args.boneyard:
@@ -2154,7 +2153,7 @@ def main(catalog):
             for ev in catalog:
                 names[ev['name']] = [x['value'] for x in ev['alias']]
             jsonstring = json.dumps(names, separators=(',', ':'))
-            with open(DIR_OUT + 'names.min.json' + testsuffix, 'w') as f:
+            with open(paths.output + 'names.min.json' + testsuffix, 'w') as f:
                 f.write(jsonstring)
 
         if args.deleteorphans and not args.boneyard:
@@ -2167,7 +2166,7 @@ def main(catalog):
                           'biblio.json', 'atels.json', 'cbets.json',
                           'conflicts.json', 'hosts.json', 'hosts.min.json']
 
-            for myfile in glob(DIR_OUT + DIR_JSON + '*.json'):
+            for myfile in glob(paths.output_json + '*.json'):
                 if not os.path.basename(myfile) in safefiles:
                     print('Deleting orphan ' + myfile)
                     # os.remove(myfile)
