@@ -7,6 +7,8 @@ import sys
 from astrocats import main, _ROOT_BASE_PATH
 from astrocats.catalog.utils import read_json_dict, repo_priority
 
+_STR_DEPRECATION_ERROR = "WARNING: using deprecated `{}`, use `{}` instead."
+
 
 class Paths:
     """Store and control catalog file-structure information.
@@ -148,3 +150,13 @@ class Paths:
         repo_folders = [os.path.join(self.output, rf)
                         for rf in repo_folders if len(rf)]
         return repo_folders
+
+    @property
+    def PATH_INPUT(self):
+        self.log.error(_STR_DEPRECATION_ERROR.format("PATH_INPUT", "input"))
+        return self.input
+
+    @property
+    def PATH_OUTPUT(self):
+        self.log.error(_STR_DEPRECATION_ERROR.format("PATH_OUTPUT", "output"))
+        return self.output
