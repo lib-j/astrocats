@@ -49,15 +49,16 @@ from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR,
     SITEMAP_TEMPLATE, TOOLS_LIST, SAFE_FILES
 
 
-def main(catalog):
-    args = catalog.args
-    paths = catalog.paths
-    log = catalog.log
+def main(astro_catalog):
+    args = astro_catalog.args
+    paths = astro_catalog.paths
+    log = astro_catalog.log
 
     infl = inflect.engine()
     infl.defnoun("spectrum", "spectra")
     testsuffix = '.test' if args.test else ''
 
+    catalog = OrderedDict()
     catalogcopy = OrderedDict()
 
     sourcedict = {}
@@ -76,7 +77,7 @@ def main(catalog):
     # MD5 Hash File
     md5_dict = load_dict_file(paths.md5_file, log)
 
-    files = catalog.paths.get_repo_output_file_list(
+    files = astro_catalog.paths.get_repo_output_file_list(
         normal=(not args.boneyard), bones=args.boneyard)
     files = sorted(files, key=lambda ss: ss.lower())
     for fcnt, eventfile in enumerate(tq(files)):
@@ -106,7 +107,7 @@ def main(catalog):
 
         tprint(eventfile + ' [' + checksum + ']')
 
-        internal_repo = catalog.paths.repos_dict['internal']
+        internal_repo = astro_catalog.paths.repos_dict['internal']
         internal_file = os.path.join(internal_repo, event_file_name + ".json")
         if os.path.isfile(internal_file):
             catalog[entry]['download'] = 'e'
