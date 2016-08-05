@@ -107,7 +107,9 @@ def main(astro_catalog):
 
         tprint(eventfile + ' [' + checksum + ']')
 
-        internal_repo = astro_catalog.paths.repos_dict['internal']
+        # FIX: 'internal' is a list, for now just select the first one...
+        internal_repo = astro_catalog.paths.repos_dict['internal'][0]
+        # log.error("inernal_repo = '{}', event_file_name = '{}'".format(internal_repo, event_file_name))
         internal_file = os.path.join(internal_repo, event_file_name + ".json")
         if os.path.isfile(internal_file):
             catalog[entry]['download'] = 'e'
@@ -411,7 +413,7 @@ def main(astro_catalog):
                 active_drag='box_zoom',
                 # sizing_mode = "scale_width",
                 y_axis_label='Apparent Magnitude',
-                TOOLS_LIST=TOOLS_LIST,
+                tools=TOOLS_LIST,
                 plot_width=485,
                 plot_height=485,
                 x_range=(min_x_range, max_x_range),
@@ -790,7 +792,7 @@ def main(astro_catalog):
 
             p2 = Figure(title='Spectra for ' + event_name, x_axis_label=label_format('Observed Wavelength (Å)'), active_drag='box_zoom',
                         y_axis_label=label_format('Flux (scaled)' + (' + offset'
-                                                                     if (nspec > 1) else '')), x_range=x_range, TOOLS_LIST=TOOLS_LIST,  # sizing_mode = "scale_width",
+                                                                     if (nspec > 1) else '')), x_range=x_range, tools=TOOLS_LIST,  # sizing_mode = "scale_width",
                         plot_width=485, plot_height=485, y_range=y_range, toolbar_location='above', toolbar_sticky=False)
             p2.xaxis.axis_label_text_font = 'futura'
             p2.yaxis.axis_label_text_font = 'futura'
@@ -1021,7 +1023,7 @@ def main(astro_catalog):
                 active_drag='box_zoom',
                 # sizing_mode = "scale_width",
                 y_axis_label='Flux Density (µJy)',
-                TOOLS_LIST=TOOLS_LIST,
+                tools=TOOLS_LIST,
                 plot_width=485,
                 plot_height=485,
                 x_range=x_range,
@@ -1352,7 +1354,7 @@ def main(astro_catalog):
                 active_drag='box_zoom',
                 # sizing_mode = "scale_width",
                 y_axis_label='Flux (ergs s⁻¹ cm⁻²)',
-                TOOLS_LIST=TOOLS_LIST,
+                tools=TOOLS_LIST,
                 plot_width=485,
                 plot_height=485,
                 x_range=x_range,
@@ -1675,7 +1677,7 @@ def main(astro_catalog):
                 if imgsrc == 'SDSS':
                     host_img_dict[event_name] = 'SDSS'
                     skyhtml = (
-                        '<a href="http://skyserver.sdss.org/DR12/en/TOOLS_LIST/chart/navi.aspx?opt=G&ra='
+                        '<a href="http://skyserver.sdss.org/DR12/en/tools/chart/navi.aspx?opt=G&ra='
                         + str(c.ra.deg) + '&dec=' + str(c.dec.deg) +
                         '&scale=0.15"><img src="' + event_file_name +
                         '-host.jpg" width=250></a>')
