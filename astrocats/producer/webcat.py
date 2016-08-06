@@ -104,6 +104,7 @@ def main(astro_catalog):
         catalog.update(json.loads(file_text, object_pairs_hook=OrderedDict))
         entry = next(reversed(catalog))
 
+        # FIX: why is `event_name` also being defined here?
         event_name = entry
 
         # FIX: why would this be different than the above similar check?
@@ -337,10 +338,12 @@ def main(astro_catalog):
                 max([x + y for x, y in list(zip(phototime, phototimelowererrs))])
 
         if photoavail and dohtml and args.writehtml:
-            webplot_photometry.plot_photo(catalog, entry)
+            webplot_photometry.plot_photo(
+                catalog, entry, dayframe, distancemod,
+                redshiftfactor, mjdmax, min_x_range, max_x_range)
 
         if spectraavail and dohtml and args.writehtml:
-            webplot_spectra.plot_spectra(catalog, entry)
+            webplot_spectra.plot_spectra(catalog, entry, mjdmax, redshiftfactor)
 
         if radioavail and dohtml and args.writehtml:
             webplot_radio.plot_radio(catalog, entry)
