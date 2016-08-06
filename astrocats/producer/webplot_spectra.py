@@ -1,8 +1,23 @@
 """Spectra Plotting Methods associatd with WebCat Script.
 """
 
+from copy import deepcopy
+from math import ceil, isnan
+import operator
+import numpy
 
-def plot_spectra(catalog, entry):
+from bokeh.models import HoverTool, Range1d, LinearAxis, ColumnDataSource, CustomJS, Slider
+from bokeh.plotting import Figure
+
+from astrocats.catalog.utils import is_number
+from .constants import TOOLS_LIST, DEF_COLORS
+from .utils import label_format
+
+
+def plot_spectra(catalog, entry, mjdmax, redshiftfactor):
+    # FIX:
+    event_name = entry
+
     spectrumwave = []
     spectrumflux = []
     spectrumerrs = []
@@ -253,3 +268,5 @@ def plot_spectra(catalog, entry):
         width=230,
         title=label_format("Spacing"),
         callback=callback)
+
+    return
