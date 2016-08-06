@@ -337,19 +337,23 @@ def main(astro_catalog):
             max_x_range = 2.0 * x_buffer + \
                 max([x + y for x, y in list(zip(phototime, phototimelowererrs))])
 
-        if photoavail and dohtml and args.writehtml:
-            webplot_photometry.plot_photo(
-                catalog, entry, dayframe, distancemod,
-                redshiftfactor, mjdmax, min_x_range, max_x_range)
+        p1 = p2 = p3 = None
+        if dohtml and args.writehtml:
+            if photoavail:
+                p1 = webplot_photometry.plot_photo(
+                    catalog, entry, dayframe, distancemod,
+                    redshiftfactor, mjdmax, min_x_range, max_x_range)
 
-        if spectraavail and dohtml and args.writehtml:
-            webplot_spectra.plot_spectra(catalog, entry, mjdmax, redshiftfactor)
+            if spectraavail:
+                p2 = webplot_spectra.plot_spectra(catalog, entry, mjdmax, redshiftfactor)
 
-        if radioavail and dohtml and args.writehtml:
-            webplot_radio.plot_radio(catalog, entry)
+            if radioavail:
+                p3 = webplot_radio.plot_radio(
+                    catalog, entry, p1, dayframe, distancemod, mjdmax,
+                    min_x_range, max_x_range, photoavail, redshiftfactor)
 
-        if xrayavail and dohtml and args.writehtml:
-            webplot_xray.plot_xray(catalog, entry)
+            if xrayavail:
+                webplot_xray.plot_xray(catalog, entry, p1)
 
         hasimage = False
         skyhtml = ''
