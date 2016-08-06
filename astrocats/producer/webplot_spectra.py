@@ -269,4 +269,4 @@ def plot_spectra(catalog, entry, mjdmax, redshiftfactor):
         title=label_format("Spacing"),
         callback=callback)
 
-    return
+    return p2
