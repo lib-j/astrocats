@@ -353,7 +353,9 @@ def main(astro_catalog):
                     min_x_range, max_x_range, photoavail, redshiftfactor)
 
             if xrayavail:
-                webplot_xray.plot_xray(catalog, entry, p1)
+                p4 = webplot_xray.plot_xray(
+                    catalog, entry, p1, dayframe, distancemod, mjdmax,
+                    min_x_range, max_x_range, photoavail, redshiftfactor)
 
         hasimage = False
         skyhtml = ''
