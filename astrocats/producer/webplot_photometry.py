@@ -6,8 +6,7 @@ from bokeh.models.widgets import Select
 from astropy.time import Time as astrotime
 
 
-from astrocats.catalog.utils import (bandaliasf, bandcolorf,
-                                     bandgroupf, bandshortaliasf, bandwavef)
+from astrocats.catalog.utils import bandaliasf, bandcolorf, bandgroupf, bandwavef
 
 from .constants import TOOLS_LIST
 
@@ -352,4 +351,4 @@ def plot_photo(catalog, entry, dayframe, distancemod, redshiftfactor, mjdmax, mi
     else:
         photochecks = ''
 
-    return
+    return p1
