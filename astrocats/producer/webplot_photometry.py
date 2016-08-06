@@ -1,45 +1,52 @@
-"""Plotting Methods associatd with WebCat Script.
+"""Photometry Plotting Methods associatd with WebCat Script.
 """
+from bokeh.models import HoverTool, DatetimeAxis, Range1d, LinearAxis, ColumnDataSource, CustomJS
+from bokeh.plotting import Figure
+from bokeh.models.widgets import Select
+from astropy.time import Time as astrotime
 
 
-def plot_photo(catalog, entry):
+from astrocats.catalog.utils import (bandaliasf, bandcolorf,
+                                     bandgroupf, bandshortaliasf, bandwavef)
+
+from .constants import TOOLS_LIST
+
+
+def plot_photo(catalog, entry, dayframe, distancemod, redshiftfactor, mjdmax, min_x_range, max_x_range):
     """Plot Photometry Bokeh Figure
     """
+
+    # FIX: is this needed for anything?
+    event_name = entry
+
     phototime = [float(x['time']) for x in catalog[entry]['photometry']
                  if 'magnitude' in x]
     phototimelowererrs = [float(x['e_lower_time'])
                           if ('e_lower_time' in x and 'e_upper_time' in x)
-                          else (float(x['e_time'])
-                                if 'e_time' in x else 0.)
-                          for x in catalog[entry]['photometry']
-                          if 'magnitude' in x]
+                          else (float(x['e_time']) if 'e_time' in x else 0.)
+                          for x in catalog[entry]['photometry'] if 'magnitude' in x]
     phototimeuppererrs = [float(x['e_upper_time'])
                           if ('e_lower_time' in x and 'e_upper_time' in x)
-                          else (float(x['e_time'])
-                                if 'e_time' in x else 0.)
-                          for x in catalog[entry]['photometry']
-                          if 'magnitude' in x]
-    photoAB = [float(x['magnitude']) for x in catalog[entry]['photometry']
+                          else (float(x['e_time']) if 'e_time' in x else 0.)
+                          for x in catalog[entry]['photometry'] if 'magnitude' in x]
+    photoAB = [float(x['magnitude'])
+               for x in catalog[entry]['photometry']
                if 'magnitude' in x]
     photoABlowererrs = [float(x['e_lower_magnitude'])
-                        if ('e_lower_magnitude' in x) else
-                        (float(x['e_magnitude'])
-                         if 'e_magnitude' in x else 0.)
-                        for x in catalog[entry]['photometry']
-                        if 'magnitude' in x]
+                        if ('e_lower_magnitude' in x)
+                        else (float(x['e_magnitude']) if 'e_magnitude' in x else 0.)
+                        for x in catalog[entry]['photometry'] if 'magnitude' in x]
     photoABuppererrs = [float(x['e_upper_magnitude'])
-                        if ('e_upper_magnitude' in x) else
-                        (float(x['e_magnitude'])
-                         if 'e_magnitude' in x else 0.)
-                        for x in catalog[entry]['photometry']
-                        if 'magnitude' in x]
+                        if ('e_upper_magnitude' in x)
+                        else (float(x['e_magnitude']) if 'e_magnitude' in x else 0.)
+                        for x in catalog[entry]['photometry'] if 'magnitude' in x]
     photoband = [(x['band'] if 'band' in x else '')
                  for x in catalog[entry]['photometry'] if 'magnitude' in x]
     photoinstru = [(x['instrument'] if 'instrument' in x else '')
                    for x in catalog[entry]['photometry']
                    if 'magnitude' in x]
-    photosource = [', '.join(
-        str(j) for j in sorted(int(i) for i in x['source'].split(',')))
+    photosource = [', '.join(str(j)
+                             for j in sorted(int(i) for i in x['source'].split(',')))
                    for x in catalog[entry]['photometry']
                    if 'magnitude' in x]
     phototype = [(x['upperlimit'] if 'upperlimit' in x else False)
@@ -344,3 +351,5 @@ def plot_photo(catalog, entry):
             callback=photocallback)
     else:
         photochecks = ''
+
+    return
