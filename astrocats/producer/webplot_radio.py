@@ -1,8 +1,23 @@
 """Radio Plotting Methods associatd with WebCat Script.
 """
+from math import pi
+
+from bokeh.models import HoverTool, DatetimeAxis, Range1d, LinearAxis, ColumnDataSource
+from bokeh.plotting import Figure
+from astropy.time import Time as astrotime
+from astropy import units as un
+
+from astrocats.catalog.utils import get_sig_digits, round_sig
+
+from astrocats.catalog.utils import radiocolorf
+from .constants import TOOLS_LIST, RADIO_SIGMA
 
 
-def plot_radio(catalog, entry):
+def plot_radio(catalog, entry, p1, dayframe, distancemod, mjdmax,
+               min_x_range, max_x_range, photoavail, redshiftfactor):
+    # FIX
+    event_name = entry
+
     phototime = [float(x['time']) for x in catalog[entry]['photometry']
                  if 'fluxdensity' in x]
     phototimelowererrs = [float(x['e_lower_time'])
@@ -47,8 +62,7 @@ def plot_radio(catalog, entry):
         for j in sorted(
             int(i)
             for i in catalog[entry]['photometry'][x]['source'].split(',')))
-                   for x, y in enumerate(catalog[entry]['photometry'])
-                   if 'fluxdensity' in y]
+        for x, y in enumerate(catalog[entry]['photometry']) if 'fluxdensity' in y]
     phototype = [
         (True if 'upperlimit' in x or
          RADIO_SIGMA * float(x['e_fluxdensity']) >= float(x['fluxdensity'])
@@ -319,3 +333,5 @@ def plot_radio(catalog, entry):
     p3.legend.label_width = 20
     p3.legend.label_height = 14
     p3.legend.glyph_height = 14
+
+    return p3
