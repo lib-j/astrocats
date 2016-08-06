@@ -1,8 +1,24 @@
 """X-ray Plotting Methods associatd with WebCat Script.
 """
+from math import pi
+from statistics import mean
+
+from bokeh.models import HoverTool, DatetimeAxis, Range1d, LinearAxis, ColumnDataSource
+from bokeh.plotting import Figure
+from astropy.time import Time as astrotime
+from astropy import units as un
+
+from astrocats.catalog.utils import round_sig, get_sig_digits, xraycolorf
+
+from .constants import TOOLS_LIST, RADIO_SIGMA
 
 
-def plot_xray(catalog, entry):
+def plot_xray(catalog, entry, p1, dayframe, distancemod, mjdmax,
+              min_x_range, max_x_range, photoavail, redshiftfactor):
+
+    # FIX:
+    event_name = entry
+
     phototime = [(mean([float(y) for y in x['time']])
                   if isinstance(x['time'], list) else float(x['time']))
                  for x in catalog[entry]['photometry'] if 'flux' in x]
@@ -42,8 +58,8 @@ def plot_xray(catalog, entry):
         for j in sorted(
             int(i)
             for i in catalog[entry]['photometry'][x]['source'].split(',')))
-                   for x, y in enumerate(catalog[entry]['photometry'])
-                   if 'flux' in y]
+        for x, y in enumerate(catalog[entry]['photometry'])
+        if 'flux' in y]
     phototype = [
         (True if 'upperlimit' in x or
          RADIO_SIGMA * float(x['e_flux']) >= float(x['flux']) else False)
@@ -85,8 +101,8 @@ def plot_xray(catalog, entry):
                        if hastimeerrs else ""))
     ]
     if hasfl:
-        tt += [(yaxis + " (" + photoufl[0].replace("ergs/s/cm^2",
-                                               "ergs s⁻¹ cm⁻²") + ")",
+        tt += [(yaxis + " (" + photoufl[0].replace(
+                "ergs/s/cm^2", "ergs s⁻¹ cm⁻²") + ")",
                 "@y" + ("&nbsp;±&nbsp;@err" if hasflerrs else ""))]
         if 'maxabsmag' in catalog[entry] and 'maxappmag' in catalog[entry]:
             tt += [("Iso. Lum. (ergs s⁻¹)",
@@ -331,3 +347,5 @@ def plot_xray(catalog, entry):
     p4.legend.label_width = 20
     p4.legend.label_height = 14
     p4.legend.glyph_height = 14
+
+    return p4
