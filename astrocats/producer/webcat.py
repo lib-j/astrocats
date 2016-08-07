@@ -14,41 +14,33 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from glob import glob
-from math import ceil, isnan, pi
 from statistics import mean
 
 import inflect
-import numpy
 from astropy import units as un
 from astropy.coordinates import SkyCoord as coord
 from astropy.time import Time as astrotime
 from bokeh.embed import file_html
 from bokeh.layouts import row as bokehrow
 from bokeh.layouts import column, layout
-from bokeh.models import (ColumnDataSource, CustomJS, DatetimeAxis, HoverTool,
-                          LinearAxis, Range1d, Slider)
-from bokeh.models.widgets import Select
-from bokeh.plotting import Figure, reset_output
+from bokeh.plotting import reset_output
 from bokeh.resources import CDN
 from bs4 import BeautifulSoup
 
-from astrocats.catalog.utils import (bandaliasf, bandcolorf,
-                                     bandgroupf, bandshortaliasf, bandwavef,
-                                     get_sig_digits,
-                                     is_number, pretty_num, radiocolorf,
-                                     round_sig, tprint, tq, xraycolorf)
+from astrocats.catalog.utils import (bandshortaliasf, bandwavef,
+                                     pretty_num, is_number, tq)
 from astrocats.supernovae.scripts.events import (get_event_filename,
                                                  get_event_text)
 from cdecimal import Decimal
 
-from .utils import touch, label_format, get_first_kind, \
+from .utils import touch, get_first_kind, \
     get_first_value, md5file
 
 from . import webplot_photometry, webplot_spectra, webplot_radio, webplot_xray
 
-from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, DEF_COLORS, \
+from .constants import TRAVIS_LIMIT, RADIO_SIGMA, GOOGLE_PING_URL, SNE_LINK_DIR, \
     COLUMN_KEYS, EVENT_IGNORE_KEY, HEADER, EVENT_PAGE_HEADER, DEF_TITLES, SNE_PAGES, \
-    SITEMAP_TEMPLATE, TOOLS_LIST, SAFE_FILES
+    SITEMAP_TEMPLATE, SAFE_FILES
 
 
 def main(astro_catalog):
@@ -337,15 +329,18 @@ def main(astro_catalog):
             max_x_range = 2.0 * x_buffer + \
                 max([x + y for x, y in list(zip(phototime, phototimelowererrs))])
 
+        # Create Plots
+        # ------------
         p1 = p2 = p3 = None
         if dohtml and args.writehtml:
             if photoavail:
-                p1 = webplot_photometry.plot_photo(
+                p1, photochecks = webplot_photometry.plot_photo(
                     catalog, entry, dayframe, distancemod,
                     redshiftfactor, mjdmax, min_x_range, max_x_range)
 
             if spectraavail:
-                p2 = webplot_spectra.plot_spectra(catalog, entry, mjdmax, redshiftfactor)
+                p2, binslider, spacingslider = webplot_spectra.plot_spectra(
+                    catalog, entry, mjdmax, redshiftfactor)
 
             if radioavail:
                 p3 = webplot_radio.plot_radio(
