@@ -163,7 +163,7 @@ def _first_event_first_source(catalog):
     # Add a fake photometric observation
     log.info("Calling: ``add_photometry(...)``")
     catalog.entries[name].add_photometry(
-        time='12345', magnitude='20.0', band='g', e_magnitude='0.01',
+        time='54346.326151', magnitude='20.0', band='g', e_magnitude='0.01',
         telescope='OWELTMT', instrument='UltraCam', observer='I. M. Fake',
         observatory='Mt. Olympus', survey='Zeus Analog Sky Survey',
         source=source)
@@ -172,7 +172,7 @@ def _first_event_first_source(catalog):
     # Add a fake photometric observation with mangled data
     log.info("Calling: ``add_photometry(...)``")
     catalog.entries[name].add_photometry(
-        time='oiasjdqw', magnitude='oihqwr', source=source)
+        time='54347.326151', magnitude='oihqwr', source=source)
     log.debug("\n{}\n".format(repr(catalog.entries[name])))
 
     # Add a fake photometric observation without required fields
@@ -228,7 +228,7 @@ def _first_event_second_source(catalog):
     catalog.entries[name].add_spectrum(
         u_wavelengths='Angstrom', u_fluxes='erg/s/cm^2/Angstrom',
         u_errors='erg/s/cm^2/Angstrom', filename='my_spectrum.txt',
-        time='12345', u_time='MJD',
+        time='54348.326151', u_time='MJD',
         wavelengths=wavelengths, fluxes=fluxes, errors=errors,
         telescope='OWELTMT', instrument='MOSICE', observer='I. M. Fake',
         observatory='Mt. Everest', survey='Hillary Transient Factory',
@@ -243,7 +243,7 @@ def _first_event_second_source(catalog):
     catalog.entries[name].add_spectrum(
         u_wavelengths='Angstrom', u_fluxes='erg/s/cm^2/Angstrom',
         u_errors='erg/s/cm^2/Angstrom', filename='my_spectrum.txt',
-        time='12345',
+        time='54349.326151',
         wavelengths=wavelengths, fluxes=fluxes, source=source)
     log.debug("\n{}\n".format(repr(catalog.entries[name])))
 
