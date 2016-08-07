@@ -351,4 +351,4 @@ def plot_photo(catalog, entry, dayframe, distancemod, redshiftfactor, mjdmax, mi
     else:
         photochecks = ''
 
-    return p1
+    return p1, photochecks
