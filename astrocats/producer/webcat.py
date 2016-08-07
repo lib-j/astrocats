@@ -33,8 +33,7 @@ from astrocats.supernovae.scripts.events import (get_event_filename,
                                                  get_event_text)
 from cdecimal import Decimal
 
-from .utils import touch, get_first_kind, \
-    get_first_value, md5file
+from .utils import touch, get_first_kind, get_first_value, md5file
 
 from . import webplot_photometry, webplot_spectra, webplot_radio, webplot_xray
 
