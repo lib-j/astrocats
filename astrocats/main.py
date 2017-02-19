@@ -223,12 +223,14 @@ def load_command_line_args(clargs=None):
         '--lock',
         dest='lock',
         default=False,
+        action='store_true',
         help=("Force creation of 'lock' file to prevent updates from running"
               " (default: False)."))
     parser.add_argument(
         '--check-lock',
         dest='lock_check',
         default=False,
+        action='store_true',
         help="Require that no 'lock' file during execution (default: False).")
 
     # If output files should be written or not
