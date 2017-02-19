@@ -1,6 +1,7 @@
 """Handle user arguments when running AstroCats
 """
 import argparse
+import os
 import logging
 from . import gitter
 
@@ -19,7 +20,41 @@ class ArgsHandler:
         # -----------
         if args.subcommand == 'import':
             self.log.log(log_lvl, "Running 'import'.")
-            catalog.import_data()
+            # Create lock-file on full imports or when forced
+            lock_fname = catalog.lock_import_fname
+            created_lock = False
+            if (not args.update) or args.lock:
+                self.log.info("Creating lock-file '{}'".format(lock_fname))
+                # Create a lock file, fails if one already exists
+                touch(lock_fname)
+                created_lock = True
+
+            try:
+                # Check that lock-file doesn't exist if it shouldnt
+                if args.update or args.lock_check:
+                    self.log.info(
+                        "Checking that lock-file '{}' does not exist.".format(
+                            lock_fname))
+                    if os.path.exists(lock_fname):
+                        err = "Lock file '{}' exists, terminating.".format(
+                            lock_fname)
+                        self.log.error(err)
+                        raise RuntimeError(err)
+
+                # Run import
+                catalog.import_data()
+
+            finally:
+                # delete the lock if we created it
+                if created_lock:
+                    self.log.info("Deleting lock-file '{}'".format(
+                        lock_fname))
+                    os.remove(lock_fname)
+                    if os.path.exists(lock_fname):
+                        err = "Lock file '{}' wasnt deleted!".format(
+                            lock_fname)
+                        self.log.error(err)
+                        raise RuntimeError(err)
 
         # Git Subcommands
         # ---------------
@@ -176,3 +211,15 @@ class ArgsHandler:
             help='Determine counts of entries, files, etc.')
 
         return lyze_pars
+
+
+def touch(path, fail_if_exists=True):
+    if fail_if_exists:
+        if os.path.exists(path):
+            raise RuntimeError("Lock file '{}' already exists!".format(path))
+
+    with open(path, 'a'):
+        os.utime(path, None)
+    if not os.path.exists(path):
+        raise RuntimeError("File '{}' does not exist!".format(path))
+    return
