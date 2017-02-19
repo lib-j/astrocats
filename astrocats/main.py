@@ -168,6 +168,8 @@ def load_command_line_args(clargs=None):
 
     parser.add_argument('command', nargs='?', default=None)
 
+    # Basic Runtime Parameters
+    # -------------------------
     parser.add_argument(
         '--version',
         action='version',
@@ -187,11 +189,13 @@ def load_command_line_args(clargs=None):
         action='store_true',
         help='Print excessive messages to the screen.')
     parser.add_argument(
-        '--include-private',
-        dest='private',
-        default=False,
-        action='store_true',
-        help='Include private data in import.')
+        '--log',
+        dest='log_filename',
+        default=None,
+        help='Filename to which to store logging information.')
+
+    # More Advanced Runtime Parameters
+    # --------------------------------
     parser.add_argument(
         '--travis',
         '-t',
@@ -200,17 +204,32 @@ def load_command_line_args(clargs=None):
         action='store_true',
         help='Run import script in test mode for Travis.')
     parser.add_argument(
+        '--include-private',
+        dest='private',
+        default=False,
+        action='store_true',
+        help='Include private data in import.')
+    parser.add_argument(
         '--clone-depth',
         dest='clone_depth',
         default=0,
         type=int,
         help=('When cloning git repos, only clone out to this depth '
               '(default: 0 = all levels).'))
+
+    # Concerning Lock-Files and acquiring lock for modifications
+    # ----------------------------------------------------------
     parser.add_argument(
-        '--log',
-        dest='log_filename',
-        default=None,
-        help='Filename to which to store logging information.')
+        '--lock',
+        dest='lock',
+        default=False,
+        help=("Force creation of 'lock' file to prevent updates from running"
+              " (default: False)."))
+    parser.add_argument(
+        '--check-lock',
+        dest='lock_check',
+        default=False,
+        help="Require that no 'lock' file during execution (default: False).")
 
     # If output files should be written or not
     # ----------------------------------------
