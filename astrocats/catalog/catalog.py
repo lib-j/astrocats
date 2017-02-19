@@ -214,6 +214,13 @@ class Catalog:
         self._version_long = "Astrocats v'{}' SHA'{}' - {} SHA'{}'".format(
             __version__, astrocats_sha, my_name, catalog_sha)
         self.log.debug(self._version_long)
+
+        # Create lock-file filename
+        self.lock_import_fname = os.path.join(
+            my_path, "." + my_name.lower() + ".import.lock")
+        self.log.debug("Import lock-file filename: '{}'".format(
+            self.lock_import_fname))
+
         return
 
     def import_data(self):
@@ -732,7 +739,6 @@ class Catalog:
         """
         # Initialize parameter related to diagnostic output of memory usage
         if log_mem:
-            import psutil
             process = psutil.Process(os.getpid())
             rss = process.memory_info().rss
             LOG_MEMORY_INT = 1000
@@ -800,7 +806,7 @@ class Catalog:
             # Run 'manually' (extract stub parameters directly from JSON)
             _add_stub_manually(_fname)
 
-            if log_memory:
+            if log_mem:
                 rss = process.memory_info().rss / 1024 / 1024
                 if ii % LOG_MEMORY_INT == 0 or rss > MEMORY_LIMIT:
                     log_memory(self.log, "\nLoaded stub {}".format(ii),
