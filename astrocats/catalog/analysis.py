@@ -9,11 +9,17 @@ To-Do
 """
 import os
 from glob import glob
+from datetime import datetime
 import numpy as np
+import json
+from collections import OrderedDict
+
+from .utils import dict_to_pretty_string
 
 
 class Analysis:
 
+    # Files to ignore in count
     _IGNORE_FILES = ['LICENSE', 'README.md']
     # If no specific types should be counted, make this an empty list
     _COUNT_FILE_TYPES = ['json', 'txt']
@@ -35,6 +41,8 @@ class Analysis:
         """Run the analysis routines determined from the given `args`.
         """
         self.log.info("Running catalog analysis")
+
+        self.count_catalog()
 
         if args.count:
             self.count()
@@ -62,6 +70,70 @@ class Analysis:
         retvals['num_files'] = num_files
 
         return retvals
+
+    def count_catalog(self):
+        self.log.debug("Analysis.count_catalog()")
+        log = self.log
+
+        catalog_fname = os.path.join(self.catalog.PATHS.PATH_OUTPUT, 'catalog.json')
+        log.info("Catalog filename: '{}'".format(catalog_fname))
+        beg = datetime.now()
+        try:
+            cat = json.load(open(catalog_fname, 'r'), object_pairs_hook=OrderedDict)
+        except:
+            err = "Loading data from '{}' failed".format(catalog_fname)
+            log.error(err)
+            raise
+        num_all = len(cat)
+        log.warning("Loaded {} entries from '{}' after {}".format(
+            num_all, catalog_fname, datetime.now()-beg))
+
+        KEYS = self.catalog.proto._KEYS
+
+        types_count = OrderedDict()
+        num_no_type = 0
+        num_with_type = 0
+        num_unclear = 0
+        for dat in cat:
+            if KEYS.CLAIMED_TYPE not in dat:
+                num_no_type += 1
+                continue
+            ctype = dat[KEYS.CLAIMED_TYPE]
+            if len(ctype) != 1:
+                num_unclear += 1
+                continue
+            ctype = ctype[0]['value']
+            num_with_type += 1
+            if ctype in types_count:
+                types_count[ctype] += 1
+            else:
+                types_count[ctype] = 1
+
+        def _str_num_frac(num, tot=num_all):
+            return "{:5d}/{:5d} = {:6.2f}".format(num, tot, num/tot)
+
+        log.warning("Without type: " + _str_num_frac(num_no_type))
+        log.warning("Non unique  : " + _str_num_frac(num_unclear))
+        log.warning("Good        : " + _str_num_frac(num_with_type))
+        types_count = OrderedDict(sorted(types_count.items(), key=lambda x: x[1], reverse=True))
+
+        print()
+        log.warning("Supernovae Counts by Type:")
+        for ii, (name, num) in enumerate(types_count.items()):
+            # if num/num_with_type < 2e-3:
+            # if ii >= 10:
+            #     break
+            log.warning("{:14s}: {}".format(name, _str_num_frac(num, num_with_type)))
+
+        print()
+        log.warning("All encountered types:")
+        keys = list(types_count.keys())
+        step = 5
+        for ii in range(0, len(keys), step):
+            _str = " ".join("'{}'".format(kk) for kk in keys[ii:ii+step])
+            log.warning("\t" + _str)
+
+        return
 
     def _count_tasks(self):
         """Count the number of tasks, both in the json and directory.
@@ -164,6 +236,7 @@ class Analysis:
                  or not ignore]
         num_files = len(files)
         return num_files
+
 
 
 def _get_last_dirs(path, num=1):
