@@ -4,7 +4,7 @@ from glob import glob
 from astrocats.catalog.utils import is_number
 
 
-def get_rep_folders(module):
+def get_all_rep_folders(module):
     with open('astrocats/' + module + '/input/rep-folders.txt', 'r') as f:
         return f.read().splitlines()
 
@@ -31,11 +31,14 @@ def repo_file_list(module, repofolders, normal=True, bones=True):
 def get_rep_folder(entry, repofolders):
     if 'discoverdate' not in entry:
         return repofolders[0]
+
     if not is_number(entry['discoverdate'][0]['value'].split('/')[0]):
         warnings.warn('Discovery year is not a number')
         return repofolders[0]
+
     repoyears = get_rep_years(repofolders)
     for r, repoyear in enumerate(repoyears):
         if int(entry['discoverdate'][0]['value'].split('/')[0]) <= repoyear:
             return repofolders[r]
+
     return repofolders[0]

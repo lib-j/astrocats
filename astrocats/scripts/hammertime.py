@@ -18,7 +18,7 @@ from palettable import cubehelix
 
 from astrocats.catalog.utils import tprint, tq
 from astrocats.catalog.utils import production
-from astrocats.scripts.repos import repo_file_list, get_rep_folders
+from astrocats.scripts.repos import repo_file_list, get_all_rep_folders
 
 parser = argparse.ArgumentParser(
     description='Generate a sky location map AstroCats data.'
@@ -68,7 +68,7 @@ colors = (cubehelix.cubehelix1_16.hex_colors[2:13] +
           cubehelix.perceptual_rainbow_16.hex_colors)
 shuffle(colors)
 
-repofolders = get_rep_folders(moduledir)
+repofolders = get_all_rep_folders(moduledir)
 files = repo_file_list(moduledir, repofolders, normal=True, bones=False)
 
 with open('astrocats/' + moduledir + '/input/non-' + modulename + '-types.json', 'r') as f:
