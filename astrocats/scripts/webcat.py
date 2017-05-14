@@ -26,8 +26,7 @@ from astrocats.catalog.utils import (bandaliasf, bandcodes, bandcolorf,
                                      bandgroupf, bandshortaliasf, bandwavef,
                                      bandwavelengths, get_sig_digits,
                                      is_number, pretty_num, radiocolorf,
-                                     round_sig, tq, xraycolorf)
-from astrocats.scripts.events import get_event_filename, get_event_text
+                                     round_sig, tq, xraycolorf, production)
 from astrocats.scripts.repos import (get_rep_folder, get_rep_folders,
                                      repo_file_list)
 from astropy import units as un
@@ -345,7 +344,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         entry_changed = True
         md5dict[eventfile] = checksum
 
-    filetext = get_event_text(eventfile)
+    filetext = production.get_event_text(eventfile)
 
     catalog.update(json.loads(filetext, object_pairs_hook=OrderedDict))
     entry = next(reversed(catalog))
@@ -2315,7 +2314,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         newhtml = r'<div class="event-tab-div"><h3 class="event-tab-title">Event metadata</h3><table class="event-table"><tr><th width=100px class="event-cell">Quantity</th><th class="event-cell">Value<sup>Sources</sup> [Kind]</th></tr>\n'
         edit = "true" if os.path.isfile(
             'astrocats/' + moduledir + '/input/' + modulename + '-internal/' +
-            get_event_filename(entry) + '.json') else "false"
+            production.get_event_filename(entry) + '.json') else "false"
         for key in columnkey:
             if key in catalog[entry] and key not in eventignorekey and len(
                     catalog[entry][key]) > 0:
