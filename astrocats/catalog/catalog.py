@@ -186,7 +186,6 @@ class Catalog(object):
 
         # Load repos dictionary (required)
         self.repos_dict = read_json_dict(self.PATHS.REPOS_LIST)
-        # self.clone_repos()
         log.debug("Cloning all repos")
         gitter.git_clone_all_repos(self)
 
