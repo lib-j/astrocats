@@ -2278,7 +2278,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
         # elif spectraavail:
         #    html = html + div['p2'] + div['binslider'] + div['spacingslider']
 
-        #html = html + '</body></html>'
+        # html = html + '</body></html>'
 
         html = html.replace(
             '<body>',
