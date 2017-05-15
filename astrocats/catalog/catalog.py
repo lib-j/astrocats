@@ -91,11 +91,25 @@ class Catalog(object):
                                               self.catalog_dir, '')
             self.PATH_INPUT = os.path.join(self.PATH_BASE, 'input', '')
             self.PATH_OUTPUT = os.path.join(self.PATH_BASE, 'output', '')
+            self.PATH_CACHE = os.path.join(self.PATH_OUTPUT, 'cache', '')
+            self.PATH_JSON = os.path.join(self.PATH_OUTPUT, 'json', '')
+            self.PATH_HTML = os.path.join(self.PATH_OUTPUT, 'html', '')
             # critical datafiles
             self.REPOS_LIST = os.path.join(self.PATH_INPUT, 'repos.json')
             self.TASK_LIST = os.path.join(self.PATH_INPUT, 'tasks.json')
             self.repos_dict = read_json_dict(self.REPOS_LIST)
             return
+
+        def __str__(self):
+            rstr = "`catalog_dir` = '{}'".format(self.catalog_dir)
+            rstr += "\n`PATH_INPUT` = '{}'".format(self.PATH_INPUT)
+            rstr += "\n`PATH_OUTPUT` = '{}'".format(self.PATH_OUTPUT)
+            rstr += "\n\t`PATH_CACHE` = '{}'".format(self.PATH_CACHE)
+            rstr += "\n\t`PATH_JSON` = '{}'".format(self.PATH_JSON)
+            rstr += "\n\t`PATH_HTML` = '{}'".format(self.PATH_HTML)
+            rstr += "\n`REPOS_LIST` = '{}'".format(self.REPOS_LIST)
+            rstr += "\n`TASK_LIST` = '{}'".format(self.TASK_LIST)
+            return rstr
 
         def _get_repo_file_list(self, repo_folders, normal=True, bones=True):
             """Get filenames for files in each repository, `boneyard` optional.
@@ -144,6 +158,9 @@ class Catalog(object):
                 if len(rf)
             ]
             return repo_folders
+
+        def get_md5_filename(self, fname='md5s.json'):
+            return os.path.join(self.PATH_CACHE, fname)
 
         def get_repo_output_file_list(self, normal=True, bones=True):
             """Get a list of all existing output files.
