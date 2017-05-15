@@ -27,8 +27,7 @@ from astrocats.catalog.utils import (bandaliasf, bandcodes, bandcolorf,
                                      bandwavelengths, get_sig_digits,
                                      is_number, pretty_num, radiocolorf,
                                      round_sig, tq, xraycolorf, production)
-from astrocats.scripts.repos import (get_rep_folder, get_all_rep_folders,
-                                     repo_file_list)
+from astrocats.scripts.repos import (get_all_rep_folders, repo_file_list)
 from astropy import units as un
 from astropy.coordinates import SkyCoord as coord
 from astropy.time import Time as astrotime
