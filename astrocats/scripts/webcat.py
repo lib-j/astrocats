@@ -356,7 +356,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
 
     # tprint(eventfile + ' [' + checksum + ']')
 
-    repfolder = get_rep_folder(catalog[entry], repofolders)
+    # repfolder = get_rep_folder(catalog[entry], repofolders)
     if os.path.isfile("astrocats/" + moduledir + "/input/" + modulename +
                       "-internal/" + fileeventname + ".json"):
         catalog[entry]['download'] = 'e'
@@ -2138,7 +2138,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
             #        sdssimagescale = 0.006
             #    else:
             #    sdssimagescale = 0.5
-            #dssimagescale = 0.13889*sdssimagescale
+            # dssimagescale = 0.13889*sdssimagescale
             # At the moment, no way to check if host is in SDSS footprint
             # without comparing to empty image, which is only possible at fixed
             # angular resolution.
@@ -2297,7 +2297,7 @@ for fcnt, eventfile in enumerate(tq(sorted(files, key=lambda s: s.lower()))):
                 this.location="''' + eventname + '''"\n
             </script>''', html)
 
-        repfolder = get_rep_folder(catalog[entry], repofolders)
+        # repfolder = get_rep_folder(catalog[entry], repofolders)
         html = re.sub(
             r'(\<\/body\>)', '<div class="event-download">' + r'<a href="' +
             r'../json/' + fileeventname + r'.json" download>' +
