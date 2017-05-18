@@ -88,6 +88,7 @@ class ENTRY(KeyCollection):
     SCHEMA = Key('schema', no_source=True)
     SOURCES = Key('sources', no_source=True)
     SPECTRA = Key('spectra')
+    TASKS = Key('tasks', no_source=True)
     VELOCITY = Key('velocity',
                    KEY_TYPES.NUMERIC,
                    kind_preference=_DIST_PREF_KINDS,
@@ -636,6 +637,14 @@ class Entry(OrderedDict):
             alias = self.catalog.clean_entry_name(alias)
         self.add_quantity(self._KEYS.ALIAS, alias, source)
         return alias
+
+    def add_origin_task(self, task):
+        """Add the task (i.e. during import) that this entry originated (or was modified) from.
+        """
+        # print("adding ", task)
+        retval = self.add_quantity(self._KEYS.TASKS, task, None)
+        if not retval:
+            raise RuntimeError("Add task '{}' failed".format(task))
 
     def add_error(self, value, **kwargs):
         """Add an `Error` instance to this entry."""
