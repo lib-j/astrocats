@@ -3,13 +3,10 @@
 from collections import OrderedDict
 from copy import deepcopy
 
+import six
+
 from astrocats.catalog.key import KEY_TYPES, Key, KeyCollection
 from astrocats.catalog.utils import uniq_cdl
-
-try:
-    basestring
-except NameError:
-    basestring = str
 
 
 class CatDictError(Exception):
@@ -253,7 +250,7 @@ class CatDict(OrderedDict):
         elif key.type in [KEY_TYPES.STRING, KEY_TYPES.NUMERIC, KEY_TYPES.TIME]:
             # Clean leading/trailing whitespace
             value = [
-                val.strip() if isinstance(val, (str, basestring)) else str(val)
+                val.strip() if isinstance(val, six.string_types) else str(val)
                 for val in value
             ]
             # Only keep values that are not empty
