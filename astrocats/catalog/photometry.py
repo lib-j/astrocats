@@ -111,10 +111,10 @@ class Photometry(CatDict):
     def __init__(self, parent, **kwargs):
         """Initialize."""
         self._REQ_KEY_SETS = [[PHOTOMETRY.SOURCE, PHOTOMETRY.MODEL],
-                              [PHOTOMETRY.TIME, PHOTOMETRY.HOST], [
-                                  PHOTOMETRY.MAGNITUDE, PHOTOMETRY.FLUX,
-                                  PHOTOMETRY.FLUX_DENSITY, PHOTOMETRY.COUNT_RATE,
-                                  PHOTOMETRY.LUMINOSITY]]
+                              [PHOTOMETRY.TIME, PHOTOMETRY.HOST],
+                              [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.FLUX,
+                               PHOTOMETRY.FLUX_DENSITY, PHOTOMETRY.COUNT_RATE,
+                               PHOTOMETRY.LUMINOSITY]]
         # Note: `_check()` is called at end of `super().__init__`
         super(Photometry, self).__init__(parent, **kwargs)
 
