@@ -12,14 +12,14 @@ from astrocats.catalog.catdict import CatDict, CatDictError
 from astrocats.catalog.error import ERROR, Error
 from astrocats.catalog.key import KEY_TYPES, Key, KeyCollection
 from astrocats.catalog.model import MODEL, Model
-from astrocats.catalog.photometry import PHOTOMETRY, Photometry
+from astrocats.catalog.photometry import Photometry
 from astrocats.catalog.quantity import QUANTITY, Quantity
 from astrocats.catalog.source import SOURCE, Source
 from astrocats.catalog.spectrum import SPECTRUM, Spectrum
+from astrocats.catalog import utils
 from astrocats.catalog.utils import (alias_priority, dict_to_pretty_string,
                                      is_number, listify)
 from decimal import Decimal
-from past.builtins import basestring
 
 
 class ENTRY(KeyCollection):
@@ -497,14 +497,25 @@ class Entry(OrderedDict):
         if cat_dict_class != Error:
             retval = self._check_cat_dict_source(cat_dict_class, key_in_self, **kwargs)
             if not retval:
+                if self.catalog.RAISE_ERROR_ON_ADDITION_FAILURE:
+                    err_str = "Entry._check_cat_dict_source() failed!"
+                    err_str += "class: '{}', key_in_self: '{}', kwargs: '{}'".format(
+                        cat_dict_class, key_in_self, kwargs)
+                    utils.log_raise(self._log, err_str, RuntimeError)
                 return False
 
         # Try to create a new instance of this subclass of `CatDict`
         new_entry = self._init_cat_dict(cat_dict_class, key_in_self, **kwargs)
         if new_entry is None:
+            if self.catalog.RAISE_ERROR_ON_ADDITION_FAILURE:
+                err_str = "Entry._init_cat_dict() failed!"
+                err_str += "class: '{}', key_in_self: '{}', kwargs: '{}'".format(
+                    cat_dict_class, key_in_self, kwargs)
+                utils.log_raise(self._log, err_str, RuntimeError)
             return False
 
         # Compare this new entry with all previous entries to make sure is new
+        #    If it is NOT new, return the entry
         if compare_to_existing and cat_dict_class != Error:
             for item in self.get(key_in_self, []):
                 if new_entry.is_duplicate_of(item):
@@ -644,13 +655,19 @@ class Entry(OrderedDict):
         return
 
     def add_photometry(self, compare_to_existing=True, **kwargs):
-        """Add a `Photometry` instance to this entry."""
-        self._add_cat_dict(
+        """Add a `Photometry` instance to this entry.
+
+        Returns
+        -------
+        retval : bool
+            True on succesful addition, False otherwise.
+        """
+        retval = self._add_cat_dict(
             Photometry,
             self._KEYS.PHOTOMETRY,
             compare_to_existing=compare_to_existing,
             **kwargs)
-        return
+        return retval
 
     def merge_dupes(self):
         """Merge two entries that correspond to the same entry."""
@@ -684,6 +701,8 @@ class Entry(OrderedDict):
                 **kwargs)
             if isinstance(cat_dict, CatDict):
                 self._append_additional_tags(quantity, source, cat_dict)
+                success = False
+            elif cat_dict is False:
                 success = False
 
         return success

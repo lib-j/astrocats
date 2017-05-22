@@ -47,6 +47,8 @@ class Catalog(object):
 
     TRAVIS_QUERY_LIMIT = 10
     COMPRESS_ABOVE_FILESIZE = 90e6  # bytes
+    # Raise an error if adding a quantity (photometry, source, etc) fails
+    RAISE_ERROR_ON_ADDITION_FAILURE = False
 
     class PATHS(object):
         """Store and control catalog file-structure information.
@@ -506,7 +508,7 @@ class Catalog(object):
         newname = self.clean_entry_name(name)
 
         if not newname:
-            raise (ValueError('Fatal: Attempted to add entry with no name.'))
+            raise ValueError('Fatal: Attempted to add entry with no name.')
 
         # If entry already exists, return
         if newname in self.entries:
