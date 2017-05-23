@@ -482,12 +482,8 @@ class Entry(OrderedDict):
             return None
         return new_entry
 
-    def _add_cat_dict(self,
-                      cat_dict_class,
-                      key_in_self,
-                      check_for_dupes=True,
-                      compare_to_existing=True,
-                      **kwargs):
+    def _add_cat_dict(self, cat_dict_class, key_in_self,
+                      check_for_dupes=True, compare_to_existing=True, **kwargs):
         """Add a `CatDict` to this `Entry`.
 
         CatDict only added if initialization succeeds and it
@@ -716,22 +712,15 @@ class Entry(OrderedDict):
                 del self.catalog.entries[dupe]
         self.dupe_of = []
 
-    def add_quantity(self,
-                     quantities,
-                     value,
-                     source,
-                     check_for_dupes=True,
-                     compare_to_existing=True,
-                     **kwargs):
+    def add_quantity(self, quantities, value, source,
+                     check_for_dupes=True, compare_to_existing=True, **kwargs):
         """Add an `Quantity` instance to this entry."""
         success = True
         for quantity in listify(quantities):
             kwargs.update({QUANTITY.VALUE: value, QUANTITY.SOURCE: source})
             cat_dict = self._add_cat_dict(
-                Quantity,
-                quantity,
-                compare_to_existing=compare_to_existing,
-                check_for_dupes=check_for_dupes,
+                Quantity, quantity,
+                compare_to_existing=compare_to_existing, check_for_dupes=check_for_dupes,
                 **kwargs)
             if isinstance(cat_dict, CatDict):
                 self._append_additional_tags(quantity, source, cat_dict)
