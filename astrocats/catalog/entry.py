@@ -47,7 +47,7 @@ class ENTRY(KeyCollection):
     DISTINCT_FROM = Key('distinctfrom', KEY_TYPES.STRING)
     EBV = Key('ebv', KEY_TYPES.NUMERIC, replace_better=True)
     AV_CIRCUM = Key('avcircum', KEY_TYPES.NUMERIC, replace_better=True)
-    ERRORS = Key('errors', no_source=True)
+    ERRORS = Key('errors', require_source=False)
     HOST = Key('host', KEY_TYPES.STRING)
     HOST_DEC = Key('hostdec', KEY_TYPES.STRING)
     HOST_OFFSET_ANG = Key('hostoffsetang', KEY_TYPES.NUMERIC)
@@ -78,17 +78,17 @@ class ENTRY(KeyCollection):
     MAX_BAND = Key('maxband', KEY_TYPES.STRING)
     MAX_DATE = Key('maxdate', KEY_TYPES.STRING, replace_better=True)
     MODELS = Key('models')
-    NAME = Key('name', KEY_TYPES.STRING, no_source=True)
+    NAME = Key('name', KEY_TYPES.STRING, require_source=False)
     PHOTOMETRY = Key('photometry')
     RA = Key('ra', KEY_TYPES.STRING)
     REDSHIFT = Key('redshift',
                    KEY_TYPES.NUMERIC,
                    kind_preference=_DIST_PREF_KINDS,
                    replace_better=True)
-    SCHEMA = Key('schema', no_source=True)
-    SOURCES = Key('sources', no_source=True)
+    SCHEMA = Key('schema', require_source=False)
+    SOURCES = Key('sources', require_source=False)
     SPECTRA = Key('spectra')
-    TASKS = Key('tasks')
+    TASKS = Key('tasks', require_source=False)
     VELOCITY = Key('velocity',
                    KEY_TYPES.NUMERIC,
                    kind_preference=_DIST_PREF_KINDS,
@@ -525,10 +525,7 @@ class Entry(OrderedDict):
             for item in self.get(key_in_self, []):
                 # Do not add duplicates
                 if new_data.is_duplicate_of(item):
-
-                    # Combine tags if desired
-                    if dupes_merge_tags:
-                        item.append_sources_from(new_data)
+                    item.append_sources_from(new_data)
                     return new_data, DUPE
 
         # Add data
@@ -1118,33 +1115,26 @@ class Entry(OrderedDict):
         '''
 
         if self._KEYS.SOURCES in self:
+            _NO_SRCS_REQUIRED = [self._KEYS.NAME, self._KEYS.SCHEMA, self._KEYS.SOURCES,
+                                 self._KEYS.ERRORS]
             # Remove orphan sources
-            source_aliases = [
-                x[SOURCE.ALIAS] for x in self[self._KEYS.SOURCES]
-            ]
+            source_aliases = [x[SOURCE.ALIAS] for x in self[self._KEYS.SOURCES]]
             # Sources with the `PRIVATE` attribute are always retained
-            source_list = [
-                x[SOURCE.ALIAS] for x in self[self._KEYS.SOURCES]
-                if SOURCE.PRIVATE in x
-            ]
+            source_list = [x[SOURCE.ALIAS] for x in self[self._KEYS.SOURCES]
+                           if SOURCE.PRIVATE in x]
             for key in self:
-                # if self._KEYS.get_key_by_name(key).no_source:
-                if (key in [
-                        self._KEYS.NAME, self._KEYS.SCHEMA, self._KEYS.SOURCES,
-                        self._KEYS.ERRORS
-                ]):
+                # if self._KEYS.get_key_by_name(key).require_source:
+                if (key in _NO_SRCS_REQUIRED):
                     continue
                 for item in self[key]:
                     source_list += item[item._KEYS.SOURCE].split(',')
-            new_src_list = sorted(
-                list(set(source_aliases).intersection(source_list)))
+            new_src_list = sorted(list(set(source_aliases).intersection(source_list)))
             new_sources = []
             for source in self[self._KEYS.SOURCES]:
                 if source[SOURCE.ALIAS] in new_src_list:
                     new_sources.append(source)
                 else:
-                    self._log.info('Removing orphaned source from `{}`.'
-                                   .format(name))
+                    self._log.info('Removing orphaned source from `{}`.'.format(name))
 
             if not new_sources:
                 del self[self._KEYS.SOURCES]

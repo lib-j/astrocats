@@ -2,7 +2,7 @@
 """
 from astrocats.catalog.catdict import CatDict, CatDictError
 from astrocats.catalog.key import KEY_TYPES, Key, KeyCollection
-from astrocats.catalog.utils import is_number
+from astrocats.catalog import utils
 
 
 class QUANTITY(KeyCollection):
@@ -61,7 +61,9 @@ class Quantity(CatDict):
     _KEYS = QUANTITY
 
     def __init__(self, parent, **kwargs):
-        self._REQ_KEY_SETS = [[QUANTITY.VALUE], [QUANTITY.SOURCE]]
+        # self._REQ_KEY_SETS = [[QUANTITY.VALUE], [QUANTITY.SOURCE]]
+        # Handle `SOURCE` requirement separately
+        self._REQ_KEY_SETS = [[QUANTITY.VALUE]]
 
         super(Quantity, self).__init__(parent, **kwargs)
 
@@ -97,13 +99,18 @@ class Quantity(CatDict):
                 " '{}'.".format(self[QUANTITY.VALUE], parent[
                     parent._KEYS.NAME]))
 
-        # Check that quantity value matches type after cleaning
-        if (isinstance(self._key, Key) and
-                self._key.type == KEY_TYPES.NUMERIC and
-                not is_number(self[QUANTITY.VALUE])):
-            raise CatDictError(
-                "Value '{}' is not numeric, not adding to '{}'".format(self[
-                    QUANTITY.VALUE], parent[parent._KEYS.NAME]))
+        if isinstance(self._key, Key):
+            # Check that quantity value matches type after cleaning
+            if (((self._key.type == KEY_TYPES.NUMERIC) and
+                 (not utils.is_number(self[QUANTITY.VALUE])))):
+                raise CatDictError(
+                    "Value '{}' is not numeric, not adding to '{}'".format(self[
+                        QUANTITY.VALUE], parent[parent._KEYS.NAME]))
+            if self._key.require_source and (QUANTITY.SOURCE not in self):
+                err_str = "'{}' Requires one or more of: {}".format(self._key, QUANTITY.SOURCE)
+                utils.log_raise(self._log, err_str, CatDictError)
+
+        return
 
     def sort_func(self, key):
         if key == self._KEYS.VALUE:
