@@ -548,6 +548,40 @@ class Entry(OrderedDict):
 
         return True
 
+    def _handle_addition_failure(self, fail_loc, cat_class, cat_key, **kwargs):
+        """Based on `catalog.ADDITION_FAILURE_BEHAVIOR`, react to a failure appropriately.
+
+        A `logging.DEBUG` level message is always given.
+
+        `ADDITION_FAILURE_BEHAVIOR` == `ADD_FAIL_ACTION.WARN`
+            Then a `logging.WARNING` message is raised.
+        `ADDITION_FAILURE_BEHAVIOR` == `ADD_FAIL_ACTION.IGNORE`
+            No addition action is taken.
+        `ADDITION_FAILURE_BEHAVIOR` == `ADD_FAIL_ACTION.RAISE`
+            Then an error is raised.
+            This is the default behavior that also acts if an unknown value is given.
+
+        """
+        err_str = "'{}' failed!\n"
+        err_str += "class: '{}', key: '{}'\nkwargs: '{}'".format(cat_class, cat_key, kwargs)
+
+        fail_flag = self.catalog.ADDITION_FAILURE_BEHAVIOR
+        # Log a message at 'debug' level regardless
+        self._log.debug(err_str)
+        self._log.debug("`ADDITION_FAILURE_BEHAVIOR` = '{}'".format(fail_flag))
+
+        # if `WARN` then also log a warning
+        if fail_flag == utils.ADD_FAIL_ACTION.WARN:
+            self._log.warning(err_str)
+        # Raise an error
+        elif fail_flag == utils.ADD_FAIL_ACTION.IGNORE:
+            pass
+        # default behavior is to raise an error
+        else:
+            utils.log_raise(self._log, err_str, RuntimeError)
+
+        return
+
     @classmethod
     def get_filename(cls, name):
         """Convert from an `Entry` name into an appropriate filename."""
