@@ -253,6 +253,14 @@ class Catalog(object):
                     raise
             return
 
+        def is_internal_event(self, event_name):
+            """Check if the given event corresponds to an 'internal' file.
+            """
+            fname = self.get_filename_for_internal_event(event_name)
+            if os.path.isfile(fname):
+                return True
+            return False
+
     class SCHEMA:
         HASH = ''
         URL = ''
