@@ -6,7 +6,7 @@ Scripts for creating and analyzing catalogs of astronomical data.
 import os
 
 __version__ = '0.3.22'
-__author__ = 'James Guillochon & Luke Kelley'
+__author__ = 'James Guillochon & Luke Zoltan Kelley'
 __license__ = 'MIT'
 
 # Set the path for the user's configuration file
